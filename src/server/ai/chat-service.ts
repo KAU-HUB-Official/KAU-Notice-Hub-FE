@@ -1,4 +1,5 @@
 import { ChatAnswer, Notice, NoticeQuery, NoticeReference } from "@/lib/types";
+import { getNoticeSourceNames } from "@/lib/notices";
 import { noticeService } from "@/server/notices";
 
 import { getOpenAIClient } from "./openai-client";
@@ -44,7 +45,9 @@ function buildContext(notices: Notice[]): string {
         `id: ${notice.id}`,
         `title: ${notice.title}`,
         `date: ${notice.date ?? "날짜 미상"}`,
-        `source: ${notice.source ?? "출처 미상"}`,
+        `audience: ${notice.audienceGroup ?? "대상 미분류"}`,
+        `source_group: ${notice.sourceGroup ?? "중분류 없음"}`,
+        `sources: ${getNoticeSourceNames(notice).join(", ") || "출처 미상"}`,
         `category: ${notice.category ?? "분류 없음"}`,
         `url: ${notice.url ?? "링크 없음"}`,
         `summary: ${summary}`,

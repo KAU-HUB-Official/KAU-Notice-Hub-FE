@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { formatSourceLabel, getNoticeSourceNames } from "@/lib/notices";
 import { noticeService } from "@/server/notices";
 
 export const dynamic = "force-dynamic";
@@ -19,6 +20,8 @@ export default async function NoticeDetailPage({ params }: NoticeDetailPageProps
     notFound();
   }
 
+  const sourceNames = getNoticeSourceNames(notice);
+
   return (
     <main className="min-h-screen w-full bg-slate-50 px-4 py-8 sm:px-6 lg:px-8">
       <div className="mx-auto w-full min-w-0 max-w-4xl rounded-2xl border border-slate-200 bg-white p-5 shadow-sm md:p-8">
@@ -29,11 +32,30 @@ export default async function NoticeDetailPage({ params }: NoticeDetailPageProps
         <h1 className="mt-3 break-words text-2xl font-bold tracking-tight text-slate-900 md:text-3xl">{notice.title}</h1>
 
         <div className="mt-3 flex min-w-0 flex-wrap gap-2 text-sm text-slate-600">
-          {notice.date ? <span className="break-words">{notice.date}</span> : null}
-          {notice.source ? <span className="break-all">• {notice.source}</span> : null}
-          {notice.category ? <span className="break-all">• {notice.category}</span> : null}
-          {notice.department ? <span className="break-all">• {notice.department}</span> : null}
+          {notice.date ? <span className="max-w-full rounded-full bg-slate-100 px-3 py-1 break-words">{notice.date}</span> : null}
+          {notice.audienceGroup ? (
+            <span className="max-w-full rounded-full bg-slate-100 px-3 py-1 break-words">{notice.audienceGroup}</span>
+          ) : null}
+          {notice.sourceGroup ? (
+            <span className="max-w-full rounded-full bg-emerald-50 px-3 py-1 text-emerald-700 break-words">{notice.sourceGroup}</span>
+          ) : null}
+          {notice.category ? (
+            <span className="max-w-full rounded-full bg-amber-50 px-3 py-1 text-amber-700 break-words">{notice.category}</span>
+          ) : null}
         </div>
+
+        {sourceNames.length > 0 ? (
+          <div className="mt-3 min-w-0 text-sm text-slate-600">
+            <span className="font-medium text-slate-800">홈페이지</span>
+            <div className="mt-2 flex min-w-0 flex-wrap gap-2">
+              {sourceNames.map((source) => (
+                <span key={source} className="max-w-full rounded-full bg-brand-50 px-3 py-1 text-brand-700 break-words">
+                  {formatSourceLabel(source)}
+                </span>
+              ))}
+            </div>
+          </div>
+        ) : null}
 
         {notice.url ? (
           <p className="mt-3 min-w-0 text-sm">

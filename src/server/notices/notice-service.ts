@@ -1,11 +1,20 @@
 import {
   extractSearchTerms,
+  classifyNoticeAudience,
+  classifyNoticeSourceGroup,
+  classifyNoticeSourceGroups,
+  filterByAudienceGroup,
+  filterBySourceGroup,
   filterNotices,
+  getAllAudienceGroups,
   getAllDepartments,
+  getAllSourceGroups,
   getAllSources,
   getCleanCategories,
+  getNoticeSourceNames,
   normalizeFilterValue,
-  normalizeFacetValue
+  normalizeFacetValue,
+  shouldUseSourceFilter
 } from "@/lib/notices";
 import { Notice, NoticeFacets, NoticeListResult, NoticeQuery } from "@/lib/types";
 
@@ -34,9 +43,12 @@ function buildSearchText(notice: Notice): string {
     notice.title,
     notice.summary,
     notice.content,
+    classifyNoticeAudience(notice),
+    ...classifyNoticeSourceGroups(notice),
     normalizeFacetValue(notice.source),
     normalizeFacetValue(notice.category),
     normalizeFacetValue(notice.department),
+    ...getNoticeSourceNames(notice),
     ...notice.tags
   ]
     .filter((value): value is string => Boolean(value))
@@ -114,20 +126,44 @@ function clampPageSize(value?: number): number {
 export class NoticeService {
   constructor(private readonly repository: NoticeRepository) {}
 
+  private enrichNotice(notice: Notice): Notice {
+    const sourceGroups = classifyNoticeSourceGroups(notice);
+
+    return {
+      ...notice,
+      audienceGroup: classifyNoticeAudience(notice),
+      sourceGroup: classifyNoticeSourceGroup(notice),
+      sourceGroups
+    };
+  }
+
   async listNotices(query: NoticeQuery): Promise<NoticeListResult> {
     const notices = await this.repository.listAll();
     const page = clampPage(query.page);
     const pageSize = clampPageSize(query.pageSize);
+    const audienceFiltered = filterByAudienceGroup(notices, query.audienceGroup);
+    const sourceGroups = getAllSourceGroups(audienceFiltered);
+    const normalizedSourceGroup = normalizeFilterValue(query.sourceGroup);
+    const effectiveSourceGroup =
+      normalizedSourceGroup && sourceGroups.includes(normalizedSourceGroup)
+        ? normalizedSourceGroup
+        : undefined;
+    const sourceGroupFiltered = filterBySourceGroup(audienceFiltered, effectiveSourceGroup);
+    const sourceFilterEnabled = shouldUseSourceFilter(query.audienceGroup);
 
     const facets: NoticeFacets = {
-      sources: getAllSources(notices),
-      categories: getCleanCategories(notices),
-      departments: getAllDepartments(notices)
+      audienceGroups: getAllAudienceGroups(notices),
+      sourceGroups,
+      sources: sourceFilterEnabled
+        ? getAllSources(sourceGroupFiltered, query.audienceGroup, effectiveSourceGroup)
+        : [],
+      categories: getCleanCategories(sourceGroupFiltered),
+      departments: getAllDepartments(sourceGroupFiltered)
     };
 
-    const filtered = filterNotices(notices, {
+    const filtered = filterNotices(sourceGroupFiltered, {
       q: query.q,
-      source: normalizeFilterValue(query.source),
+      source: sourceFilterEnabled ? query.source : undefined,
       category: normalizeFilterValue(query.category),
       department: normalizeFilterValue(query.department)
     });
@@ -159,7 +195,7 @@ export class NoticeService {
     const end = start + pageSize;
 
     return {
-      items: ranked.slice(start, end).map((item) => item.notice),
+      items: ranked.slice(start, end).map((item) => this.enrichNotice(item.notice)),
       total,
       page: currentPage,
       pageSize,
@@ -169,7 +205,14 @@ export class NoticeService {
   }
 
   async getNoticeById(id: string): Promise<Notice | null> {
-    return this.repository.getById(id);
+    const notice = await this.repository.getById(id);
+    if (!notice) {
+      return null;
+    }
+
+    return {
+      ...this.enrichNotice(notice)
+    };
   }
 
   async findRelevantNotices(question: string, limit = 5, filters: Omit<NoticeQuery, "page" | "pageSize"> = {}): Promise<Notice[]> {

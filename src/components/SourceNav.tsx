@@ -41,7 +41,7 @@ function SourceTab({
 
 export default function SourceNav({ sources, selectedSource, onSelect }: SourceNavProps) {
   const items: SourceItem[] = [
-    { value: ALL_SOURCES, label: "전체" },
+    { value: ALL_SOURCES, label: "전체 홈페이지" },
     ...sources.map((source) => ({
       value: source,
       label: formatSourceLabel(source)
@@ -49,7 +49,8 @@ export default function SourceNav({ sources, selectedSource, onSelect }: SourceN
   ];
 
   return (
-    <nav aria-label="출처 필터" className="w-full min-w-0 rounded-xl border border-slate-200 bg-slate-50 p-2">
+    <nav aria-label="홈페이지 필터" className="w-full min-w-0 rounded-xl border border-slate-200 bg-slate-50 p-2">
+      <div className="mb-2 px-1 text-xs font-semibold text-slate-500">세부 홈페이지</div>
       <div className="flex min-w-0 gap-2 overflow-x-auto pb-1 [scrollbar-width:thin] [-webkit-overflow-scrolling:touch]">
         {items.map((item) => (
           <SourceTab

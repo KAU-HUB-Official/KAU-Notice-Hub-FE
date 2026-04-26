@@ -19,6 +19,8 @@ export async function GET(request: NextRequest) {
 
     const result = await noticeService.listNotices({
       q: searchParams.get("q") ?? undefined,
+      audienceGroup: searchParams.get("audience") ?? undefined,
+      sourceGroup: searchParams.get("group") ?? searchParams.get("sourceGroup") ?? undefined,
       source: searchParams.get("source") ?? undefined,
       category: searchParams.get("category") ?? undefined,
       department: searchParams.get("department") ?? undefined,

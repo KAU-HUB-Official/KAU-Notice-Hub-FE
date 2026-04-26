@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { formatSourceLabel, getNoticeSourceNames } from "@/lib/notices";
 import { Notice } from "@/lib/types";
 
 function formatDate(value?: string): string {
@@ -26,6 +27,11 @@ interface NoticeCardProps {
 
 export default function NoticeCard({ notice, showCategory }: NoticeCardProps) {
   const summary = notice.summary ?? notice.content.slice(0, 200);
+  const sourceNames = getNoticeSourceNames(notice);
+  const sourceLabel =
+    sourceNames.length > 2
+      ? `${sourceNames.slice(0, 2).map(formatSourceLabel).join(", ")} 외 ${sourceNames.length - 2}`
+      : sourceNames.map(formatSourceLabel).join(", ");
 
   return (
     <article className="w-full min-w-0 rounded-xl border border-slate-200 bg-white p-4 transition hover:border-brand-300 hover:shadow-sm">
@@ -36,8 +42,15 @@ export default function NoticeCard({ notice, showCategory }: NoticeCardProps) {
 
         <div className="mt-3 flex min-w-0 flex-wrap gap-2 text-xs text-slate-600">
           <span className="max-w-full rounded-full bg-slate-100 px-2 py-1 break-words">{formatDate(notice.date)}</span>
-          <span className="max-w-full rounded-full bg-brand-50 px-2 py-1 text-brand-700 break-all">{notice.source ?? "출처 미상"}</span>
-          <span className="max-w-full rounded-full bg-slate-100 px-2 py-1 break-all">{notice.department ?? "부서 미기재"}</span>
+          {notice.audienceGroup ? (
+            <span className="max-w-full rounded-full bg-slate-100 px-2 py-1 break-words">{notice.audienceGroup}</span>
+          ) : null}
+          {notice.sourceGroup ? (
+            <span className="max-w-full rounded-full bg-emerald-50 px-2 py-1 text-emerald-700 break-words">{notice.sourceGroup}</span>
+          ) : null}
+          <span className="max-w-full rounded-full bg-brand-50 px-2 py-1 text-brand-700 break-words">
+            {sourceLabel || "홈페이지 미상"}
+          </span>
           {showCategory && notice.category ? (
             <span className="max-w-full rounded-full bg-amber-50 px-2 py-1 text-amber-700 break-all">{notice.category}</span>
           ) : null}

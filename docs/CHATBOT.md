@@ -14,6 +14,15 @@
 4. OpenAI에 system+user 메시지로 전달
 5. 모델 응답 + 근거 공지(`references`) 반환
 
+## 필터 파라미터(선택)
+`/api/chat` 요청 body에 아래 필터를 넣을 수 있습니다.
+- `audienceGroup`
+- `sourceGroup`
+- `source`
+
+필터를 함께 보내면 해당 범위에서만 근거 공지를 찾습니다.
+`source`는 `audienceGroup`이 `학부 재학생(학과/전공별)`, `대학원생`, `평생·전문교육원`인 경우에만 적용됩니다.
+
 ## fallback 모드
 다음 경우 fallback 응답으로 전환됩니다.
 - `OPENAI_API_KEY` 미설정

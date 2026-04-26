@@ -3,20 +3,22 @@
 import { useEffect, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 
-import { ALL_DEPARTMENTS, ALL_SOURCES } from "@/lib/notices";
+import { ALL_AUDIENCE_GROUPS, ALL_SOURCE_GROUPS, ALL_SOURCES, shouldUseSourceFilter } from "@/lib/notices";
 import { NoticeListResult } from "@/lib/types";
 
-import DepartmentFilter from "./DepartmentFilter";
+import AudienceNav from "./AudienceNav";
 import NoticeList from "./NoticeList";
 import SearchBar from "./SearchBar";
+import SourceGroupFilter from "./SourceGroupFilter";
 import SourceNav from "./SourceNav";
 
 const PAGE_SIZE = 15;
 
 export interface NoticeExplorerFilters {
   q: string;
+  audienceGroup: string;
+  sourceGroup: string;
   source: string;
-  department: string;
 }
 
 interface NoticeExplorerProps {
@@ -31,12 +33,16 @@ function buildApiParams(filters: NoticeExplorerFilters, page: number): URLSearch
     params.set("q", filters.q);
   }
 
-  if (filters.source !== ALL_SOURCES) {
-    params.set("source", filters.source);
+  if (filters.audienceGroup !== ALL_AUDIENCE_GROUPS) {
+    params.set("audience", filters.audienceGroup);
   }
 
-  if (filters.department !== ALL_DEPARTMENTS) {
-    params.set("department", filters.department);
+  if (filters.sourceGroup !== ALL_SOURCE_GROUPS) {
+    params.set("group", filters.sourceGroup);
+  }
+
+  if (shouldUseSourceFilter(filters.audienceGroup) && filters.source !== ALL_SOURCES) {
+    params.set("source", filters.source);
   }
 
   params.set("page", String(page));
@@ -52,12 +58,16 @@ function buildPageQuery(filters: NoticeExplorerFilters, page: number): URLSearch
     params.set("q", filters.q);
   }
 
-  if (filters.source !== ALL_SOURCES) {
-    params.set("source", filters.source);
+  if (filters.audienceGroup !== ALL_AUDIENCE_GROUPS) {
+    params.set("audience", filters.audienceGroup);
   }
 
-  if (filters.department !== ALL_DEPARTMENTS) {
-    params.set("department", filters.department);
+  if (filters.sourceGroup !== ALL_SOURCE_GROUPS) {
+    params.set("group", filters.sourceGroup);
+  }
+
+  if (shouldUseSourceFilter(filters.audienceGroup) && filters.source !== ALL_SOURCES) {
+    params.set("source", filters.source);
   }
 
   if (page > 1) {
@@ -138,18 +148,36 @@ export default function NoticeExplorer({ initialData, initialFilters }: NoticeEx
   }, [filters, page, pathname, router]);
 
   function handleSourceSelect(nextSource: string) {
+    if (!shouldUseSourceFilter(filters.audienceGroup)) {
+      return;
+    }
+
     setPage(1);
     setFilters((prev) => ({
       ...prev,
-      source: nextSource
+      source: nextSource === ALL_SOURCES || prev.source === nextSource ? ALL_SOURCES : nextSource
     }));
   }
 
-  function handleDepartmentChange(nextDepartment: string) {
+  function handleAudienceSelect(nextAudience: string) {
     setPage(1);
     setFilters((prev) => ({
       ...prev,
-      department: nextDepartment
+      audienceGroup: nextAudience,
+      sourceGroup: ALL_SOURCE_GROUPS,
+      source: ALL_SOURCES
+    }));
+  }
+
+  function handleSourceGroupChange(nextSourceGroup: string) {
+    setPage(1);
+    setFilters((prev) => ({
+      ...prev,
+      sourceGroup:
+        nextSourceGroup === ALL_SOURCE_GROUPS || prev.sourceGroup === nextSourceGroup
+          ? ALL_SOURCE_GROUPS
+          : nextSourceGroup,
+      source: ALL_SOURCES
     }));
   }
 
@@ -166,27 +194,51 @@ export default function NoticeExplorer({ initialData, initialFilters }: NoticeEx
     setPage(1);
     setFilters({
       q: "",
-      source: ALL_SOURCES,
-      department: ALL_DEPARTMENTS
+      audienceGroup: ALL_AUDIENCE_GROUPS,
+      sourceGroup: ALL_SOURCE_GROUPS,
+      source: ALL_SOURCES
     });
   }
 
   const hasActiveFilters =
     filters.q.length > 0 ||
-    filters.source !== ALL_SOURCES ||
-    filters.department !== ALL_DEPARTMENTS;
+    filters.audienceGroup !== ALL_AUDIENCE_GROUPS ||
+    filters.sourceGroup !== ALL_SOURCE_GROUPS ||
+    (shouldUseSourceFilter(filters.audienceGroup) && filters.source !== ALL_SOURCES);
+  const showSourceFilter = shouldUseSourceFilter(filters.audienceGroup);
+  const showSourceGroupFilter = data.facets.sourceGroups.length > 0;
 
   return (
     <section className="w-full min-w-0 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm md:p-6">
       <h2 className="text-xl font-semibold text-slate-900">공지 탐색</h2>
-      <p className="mt-1 text-sm text-slate-600">출처 선택 후 검색하고, 필요하면 부서를 좁혀보세요.</p>
+      <p className="mt-1 text-sm text-slate-600">대상자와 중분류, 필요한 경우 세부 홈페이지로 범위를 좁혀보세요.</p>
 
       <div className="mt-4 min-w-0">
-        <SourceNav
-          sources={data.facets.sources}
-          selectedSource={filters.source}
-          onSelect={handleSourceSelect}
+        <AudienceNav
+          audienceGroups={data.facets.audienceGroups}
+          selectedAudience={filters.audienceGroup}
+          onSelect={handleAudienceSelect}
         />
+      </div>
+
+      <div className="mt-4 min-w-0">
+        <div className="flex min-w-0 flex-col gap-3">
+          {showSourceGroupFilter ? (
+            <SourceGroupFilter
+              sourceGroups={data.facets.sourceGroups}
+              selectedSourceGroup={filters.sourceGroup}
+              onSelect={handleSourceGroupChange}
+            />
+          ) : null}
+
+          {showSourceFilter ? (
+            <SourceNav
+              sources={data.facets.sources}
+              selectedSource={filters.source}
+              onSelect={handleSourceSelect}
+            />
+          ) : null}
+        </div>
       </div>
 
       <div className="mt-4 min-w-0">
@@ -200,12 +252,6 @@ export default function NoticeExplorer({ initialData, initialFilters }: NoticeEx
       </div>
 
       <div className="mt-3 flex min-w-0 flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
-        <DepartmentFilter
-          departments={data.facets.departments}
-          selectedDepartment={filters.department}
-          onChange={handleDepartmentChange}
-        />
-
         <button
           type="button"
           onClick={handleReset}
@@ -217,11 +263,18 @@ export default function NoticeExplorer({ initialData, initialFilters }: NoticeEx
 
       <div className="mt-3 flex min-w-0 flex-wrap gap-2 text-xs text-slate-600">
         <span className="max-w-full rounded-full bg-slate-100 px-3 py-1 break-all">
-          출처: {filters.source === ALL_SOURCES ? "전체" : filters.source}
+          대상: {filters.audienceGroup === ALL_AUDIENCE_GROUPS ? "전체" : filters.audienceGroup}
         </span>
-        <span className="max-w-full rounded-full bg-slate-100 px-3 py-1 break-all">
-          부서: {filters.department === ALL_DEPARTMENTS ? "전체" : filters.department}
-        </span>
+        {showSourceGroupFilter ? (
+          <span className="max-w-full rounded-full bg-slate-100 px-3 py-1 break-all">
+            중분류: {filters.sourceGroup === ALL_SOURCE_GROUPS ? "전체" : filters.sourceGroup}
+          </span>
+        ) : null}
+        {showSourceFilter ? (
+          <span className="max-w-full rounded-full bg-slate-100 px-3 py-1 break-all">
+            홈페이지: {filters.source === ALL_SOURCES ? "전체" : filters.source}
+          </span>
+        ) : null}
         <span className="max-w-full rounded-full bg-slate-100 px-3 py-1 break-all">
           검색어: {filters.q || "없음"}
         </span>

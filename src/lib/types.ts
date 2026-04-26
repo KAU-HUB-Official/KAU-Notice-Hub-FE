@@ -11,6 +11,10 @@ export interface Notice {
   content: string;
   url?: string;
   source?: string;
+  sources?: string[];
+  audienceGroup?: string;
+  sourceGroup?: string;
+  sourceGroups?: string[];
   category?: string;
   department?: string;
   date?: string;
@@ -21,6 +25,8 @@ export interface Notice {
 
 export interface NoticeQuery {
   q?: string;
+  audienceGroup?: string;
+  sourceGroup?: string;
   source?: string;
   category?: string;
   department?: string;
@@ -29,6 +35,8 @@ export interface NoticeQuery {
 }
 
 export interface NoticeFacets {
+  audienceGroups: string[];
+  sourceGroups: string[];
   sources: string[];
   categories: string[];
   departments: string[];
@@ -60,6 +68,8 @@ export interface ChatAnswer {
 
 export interface ChatRequestBody {
   question: string;
+  audienceGroup?: string;
+  sourceGroup?: string;
   source?: string;
   category?: string;
   department?: string;

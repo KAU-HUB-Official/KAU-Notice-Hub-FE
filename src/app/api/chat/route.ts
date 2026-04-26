@@ -27,6 +27,8 @@ export async function POST(request: Request) {
     const answer = await askNoticeQuestion({
       question,
       filters: {
+        audienceGroup: body.audienceGroup,
+        sourceGroup: body.sourceGroup,
         source: body.source,
         category: body.category,
         department: body.department

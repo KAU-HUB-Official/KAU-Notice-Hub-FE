@@ -3,9 +3,11 @@ import NoticeExplorer, {
   NoticeExplorerFilters,
 } from "@/components/notice-explorer";
 import {
-  ALL_DEPARTMENTS,
+  ALL_AUDIENCE_GROUPS,
+  ALL_SOURCE_GROUPS,
   ALL_SOURCES,
   normalizeFilterValue,
+  shouldUseSourceFilter,
 } from "@/lib/notices";
 import { noticeService } from "@/server/notices";
 
@@ -39,41 +41,55 @@ function parsePage(value: string | undefined): number {
 }
 
 export default async function HomePage({ searchParams }: HomePageProps) {
+  const rawAudience = firstQueryValue(searchParams?.audience);
+  const rawSourceGroup =
+    firstQueryValue(searchParams?.group) ??
+    firstQueryValue(searchParams?.sourceGroup);
   const rawSource = firstQueryValue(searchParams?.source);
-  const rawDepartment = firstQueryValue(searchParams?.department);
   const rawQuery = firstQueryValue(searchParams?.q)?.trim() ?? "";
   const page = parsePage(firstQueryValue(searchParams?.page));
 
+  const initialNormalizedAudience = normalizeFilterValue(rawAudience);
+  const initialNormalizedSourceGroup = normalizeFilterValue(rawSourceGroup);
   const initialNormalizedSource = normalizeFilterValue(rawSource);
-  const initialNormalizedDepartment = normalizeFilterValue(rawDepartment);
 
-  let source = initialNormalizedSource;
-  let department = initialNormalizedDepartment;
+  let audienceGroup = initialNormalizedAudience;
+  let sourceGroup = initialNormalizedSourceGroup;
+  let source = shouldUseSourceFilter(audienceGroup) ? initialNormalizedSource : undefined;
 
   let initialData = await noticeService.listNotices({
     q: rawQuery || undefined,
+    audienceGroup,
+    sourceGroup,
     source,
-    department,
     page,
     pageSize: 15,
   });
 
-  if (source && !initialData.facets.sources.includes(source)) {
+  if (audienceGroup && !initialData.facets.audienceGroups.includes(audienceGroup)) {
+    audienceGroup = undefined;
+  }
+
+  if (sourceGroup && !initialData.facets.sourceGroups.includes(sourceGroup)) {
+    sourceGroup = undefined;
+  }
+
+  if (!shouldUseSourceFilter(audienceGroup)) {
+    source = undefined;
+  } else if (source && !initialData.facets.sources.includes(source)) {
     source = undefined;
   }
 
-  if (department && !initialData.facets.departments.includes(department)) {
-    department = undefined;
-  }
-
   if (
-    source !== initialNormalizedSource ||
-    department !== initialNormalizedDepartment
+    audienceGroup !== initialNormalizedAudience ||
+    sourceGroup !== initialNormalizedSourceGroup ||
+    source !== initialNormalizedSource
   ) {
     initialData = await noticeService.listNotices({
       q: rawQuery || undefined,
+      audienceGroup,
+      sourceGroup,
       source,
-      department,
       page: 1,
       pageSize: 15,
     });
@@ -81,8 +97,9 @@ export default async function HomePage({ searchParams }: HomePageProps) {
 
   const initialFilters: NoticeExplorerFilters = {
     q: rawQuery,
+    audienceGroup: audienceGroup ?? ALL_AUDIENCE_GROUPS,
+    sourceGroup: sourceGroup ?? ALL_SOURCE_GROUPS,
     source: source ?? ALL_SOURCES,
-    department: department ?? ALL_DEPARTMENTS,
   };
 
   return (
@@ -94,7 +111,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
             KAU Notice Hub
           </h1>
           <p className="mt-2 text-slate-600">
-            JSON Raw Data 기반 검색 + AI 질의응답
+            대상자별 분류 + 중분류 탐색 + AI 질의응답
           </p>
         </header>
 

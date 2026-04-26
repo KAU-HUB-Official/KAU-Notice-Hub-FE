@@ -11,6 +11,21 @@ function toStringValue(value: unknown): string | undefined {
   return trimmed.length > 0 ? trimmed : undefined;
 }
 
+function toStringValues(value: unknown): string[] {
+  if (typeof value === "string") {
+    const normalized = toStringValue(value);
+    return normalized ? [normalized] : [];
+  }
+
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value
+    .map((item) => toStringValue(item))
+    .filter((item): item is string => Boolean(item));
+}
+
 function firstString(raw: RawNotice, keys: string[]): string | undefined {
   for (const key of keys) {
     const value = toStringValue(raw[key]);
@@ -20,6 +35,17 @@ function firstString(raw: RawNotice, keys: string[]): string | undefined {
   }
 
   return undefined;
+}
+
+function firstStringList(raw: RawNotice, keys: string[]): string[] {
+  for (const key of keys) {
+    const values = toStringValues(raw[key]);
+    if (values.length > 0) {
+      return values;
+    }
+  }
+
+  return [];
 }
 
 function normalizeDate(rawValue: unknown): string | undefined {
@@ -101,7 +127,7 @@ function normalizeAttachments(rawValue: unknown): NoticeAttachment[] {
   return attachments;
 }
 
-function normalizeTags(raw: RawNotice, source?: string, category?: string): string[] {
+function normalizeTags(raw: RawNotice, sources: string[], categories: string[]): string[] {
   const fromRaw = raw.tags;
   const tags = new Set<string>();
 
@@ -113,11 +139,11 @@ function normalizeTags(raw: RawNotice, source?: string, category?: string): stri
     }
   }
 
-  if (category) {
+  for (const category of categories) {
     tags.add(category);
   }
 
-  if (source) {
+  for (const source of sources) {
     tags.add(source);
   }
 
@@ -133,8 +159,10 @@ export function normalizeNotice(raw: RawNotice, index: number): Notice {
     firstString(raw, ["content", "body", "text", "description"]) ??
     "본문 정보가 비어 있습니다.";
 
-  const source = firstString(raw, ["source", "source_name", "source_type", "board"]);
-  const category = firstString(raw, ["category", "category_raw", "type"]);
+  const sources = firstStringList(raw, ["source", "source_name", "source_type", "board"]);
+  const source = sources[0];
+  const categories = firstStringList(raw, ["category", "category_raw", "type"]);
+  const category = categories[0];
   const department = firstString(raw, ["department", "department_name", "office"]);
   const url = firstString(raw, ["url", "original_url", "link", "href"]);
   const date = normalizeDate(raw.date ?? raw.published_at ?? raw.created_at ?? raw.updated_at);
@@ -152,11 +180,12 @@ export function normalizeNotice(raw: RawNotice, index: number): Notice {
     content,
     url,
     source,
+    sources,
     category,
     department,
     date,
     summary,
-    tags: normalizeTags(raw, source, category),
+    tags: normalizeTags(raw, sources, categories),
     attachments: normalizeAttachments(raw.attachments)
   };
 }

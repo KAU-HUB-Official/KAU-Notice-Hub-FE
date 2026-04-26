@@ -1,8 +1,10 @@
 "use client";
 
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { FormEvent, useState } from "react";
 
+import { shouldUseSourceFilter } from "@/lib/notices";
 import { ChatAnswer } from "@/lib/types";
 
 interface ChatMessage {
@@ -18,6 +20,7 @@ const INITIAL_MESSAGE: ChatMessage = {
 };
 
 export default function ChatPanel() {
+  const searchParams = useSearchParams();
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([INITIAL_MESSAGE]);
@@ -35,12 +38,23 @@ export default function ChatPanel() {
     setMessages((prev) => [...prev, { role: "user", content: question }]);
 
     try {
+      const audienceGroup = searchParams.get("audience") ?? undefined;
+      const sourceGroup = searchParams.get("group") ?? searchParams.get("sourceGroup") ?? undefined;
+      const source = shouldUseSourceFilter(audienceGroup)
+        ? searchParams.get("source") ?? undefined
+        : undefined;
+
       const response = await fetch("/api/chat", {
         method: "POST",
         headers: {
           "Content-Type": "application/json"
         },
-        body: JSON.stringify({ question })
+        body: JSON.stringify({
+          question,
+          audienceGroup,
+          sourceGroup,
+          source
+        })
       });
 
       if (!response.ok) {
@@ -77,7 +91,7 @@ export default function ChatPanel() {
   return (
     <section className="flex h-[560px] w-full min-w-0 flex-col rounded-2xl border border-slate-200 bg-white p-4 shadow-sm md:h-[780px] md:p-5">
       <h2 className="text-xl font-semibold text-slate-900">AI 공지 챗봇</h2>
-      <p className="mt-1 text-sm text-slate-600">예: "수강신청 관련 최신 공지 요약해줘"</p>
+      <p className="mt-1 text-sm text-slate-600">예: &quot;수강신청 관련 최신 공지 요약해줘&quot;</p>
 
       <div className="mt-4 min-w-0 flex-1 space-y-3 overflow-y-auto rounded-lg border border-slate-200 bg-slate-50 p-3">
         {messages.map((message, index) => (
