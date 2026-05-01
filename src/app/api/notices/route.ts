@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
 import { noticeService } from "@/server/notices";
+import { BackendApiError } from "@/server/notices/backend-notice-service";
 
 export const dynamic = "force-dynamic";
 
@@ -20,10 +21,8 @@ export async function GET(request: NextRequest) {
     const result = await noticeService.listNotices({
       q: searchParams.get("q") ?? undefined,
       audienceGroup: searchParams.get("audience") ?? undefined,
-      sourceGroup: searchParams.get("group") ?? searchParams.get("sourceGroup") ?? undefined,
+      sourceGroup: searchParams.get("group") ?? undefined,
       source: searchParams.get("source") ?? undefined,
-      category: searchParams.get("category") ?? undefined,
-      department: searchParams.get("department") ?? undefined,
       page: parseNumber(searchParams.get("page"), 1),
       pageSize: parseNumber(searchParams.get("pageSize"), 20)
     });
@@ -31,6 +30,13 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(result);
   } catch (error) {
     console.error("GET /api/notices failed:", error);
+
+    if (error instanceof BackendApiError) {
+      return NextResponse.json(
+        { error: error.message, detail: error.detail },
+        { status: error.status }
+      );
+    }
 
     return NextResponse.json(
       { error: "공지 목록을 불러오지 못했습니다." },

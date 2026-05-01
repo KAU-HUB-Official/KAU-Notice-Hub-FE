@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 
 import { ChatRequestBody } from "@/lib/types";
-import { askNoticeQuestion } from "@/server/ai/chat-service";
+import { BackendApiError } from "@/server/notices/backend-notice-service";
+import { noticeService } from "@/server/notices";
 
 export const dynamic = "force-dynamic";
 
@@ -24,20 +25,23 @@ export async function POST(request: Request) {
       );
     }
 
-    const answer = await askNoticeQuestion({
+    const answer = await noticeService.askChat({
       question,
-      filters: {
-        audienceGroup: body.audienceGroup,
-        sourceGroup: body.sourceGroup,
-        source: body.source,
-        category: body.category,
-        department: body.department
-      }
+      audienceGroup: body.audienceGroup,
+      sourceGroup: body.sourceGroup,
+      source: body.source
     });
 
     return NextResponse.json(answer);
   } catch (error) {
     console.error("POST /api/chat failed:", error);
+
+    if (error instanceof BackendApiError) {
+      return NextResponse.json(
+        { error: error.message, detail: error.detail },
+        { status: error.status }
+      );
+    }
 
     return NextResponse.json(
       { error: "챗봇 응답을 생성하지 못했습니다." },

@@ -42,9 +42,7 @@ function parsePage(value: string | undefined): number {
 
 export default async function HomePage({ searchParams }: HomePageProps) {
   const rawAudience = firstQueryValue(searchParams?.audience);
-  const rawSourceGroup =
-    firstQueryValue(searchParams?.group) ??
-    firstQueryValue(searchParams?.sourceGroup);
+  const rawSourceGroup = firstQueryValue(searchParams?.group);
   const rawSource = firstQueryValue(searchParams?.source);
   const rawQuery = firstQueryValue(searchParams?.q)?.trim() ?? "";
   const page = parsePage(firstQueryValue(searchParams?.page));

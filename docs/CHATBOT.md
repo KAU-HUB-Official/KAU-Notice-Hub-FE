@@ -1,44 +1,49 @@
-# 챗봇 동작 문서
+# 챗봇
 
-## 개요
-챗봇은 "검색 기반 컨텍스트 주입" 방식으로 동작합니다.
-핵심 구현 파일:
-- `src/app/api/chat/route.ts`
-- `src/server/ai/chat-service.ts`
-- `src/server/notices/notice-service.ts`
+챗봇은 프론트 `/api/chat` route handler를 통해 백엔드 `/api/chat`을 호출한다. 프론트는 질문과 현재 필터 범위만 전달하고, 답변 생성은 백엔드가 담당한다.
 
-## 요청/응답 흐름
-1. 클라이언트가 `/api/chat`에 질문 전송
-2. 서버가 질문으로 관련 공지 검색 (`findRelevantNotices`, 기본 6건)
-3. 검색 결과를 컨텍스트 문자열로 구성
-4. OpenAI에 system+user 메시지로 전달
-5. 모델 응답 + 근거 공지(`references`) 반환
+## 요청 흐름
 
-## 필터 파라미터(선택)
-`/api/chat` 요청 body에 아래 필터를 넣을 수 있습니다.
-- `audienceGroup`
-- `sourceGroup`
-- `source`
+1. 사용자가 `ChatPanel`에 질문을 입력한다.
+2. 현재 URL의 `audience`, `group`, `source`를 함께 읽는다.
+3. `source`는 허용된 대상자에서만 요청에 포함한다.
+4. `/api/chat` route handler가 백엔드 `/api/chat`으로 전달한다.
+5. 응답의 `answer`와 `references`를 화면에 표시한다.
 
-필터를 함께 보내면 해당 범위에서만 근거 공지를 찾습니다.
-`source`는 `audienceGroup`이 `학부 재학생(학과/전공별)`, `대학원생`, `평생·전문교육원`인 경우에만 적용됩니다.
+## 요청 body
 
-## fallback 모드
-다음 경우 fallback 응답으로 전환됩니다.
-- `OPENAI_API_KEY` 미설정
-- OpenAI 호출 예외 발생
+```ts
+interface ChatRequestBody {
+  question: string;
+  audienceGroup?: string;
+  sourceGroup?: string;
+  source?: string;
+}
+```
 
-응답의 `usedFallback`으로 모드 확인 가능
-- `true`: fallback
-- `false`: OpenAI 응답
+`question`은 필수이며 route handler에서 빈 문자열과 500자 초과 입력을 거부한다.
 
-## 현재 제약
-- 컨텍스트 상한: 최대 6개 공지
-- 컨텍스트에 없는 정보는 답변하기 어려움
-- 완전한 RAG(벡터 검색)는 아님
+## 응답
 
-## 디버깅 체크리스트
-1. `references`에 기대 공지가 포함되는지 확인
-2. `usedFallback` 값 확인
-3. 질문 문구를 더 구체화해서 재시도
-4. `src/lib/notices.ts`의 검색 규칙/불용어 점검
+```ts
+interface ChatAnswer {
+  answer: string;
+  references: Array<{
+    id: string;
+    title: string;
+    url?: string;
+    source?: string;
+    date?: string;
+  }>;
+}
+```
+
+## 구현 위치
+
+| 역할 | 파일 |
+| --- | --- |
+| 챗봇 UI | `src/components/chat-panel.tsx` |
+| 프론트 route handler | `src/app/api/chat/route.ts` |
+| 백엔드 API 클라이언트 | `src/server/notices/backend-notice-service.ts` |
+
+답변 품질이나 근거 공지 검색 결과가 맞지 않으면 백엔드 `/api/chat`과 `/api/notices?q=...` 응답을 먼저 확인한다.

@@ -16,7 +16,6 @@ export interface Notice {
   sourceGroup?: string;
   sourceGroups?: string[];
   category?: string;
-  department?: string;
   date?: string;
   summary?: string;
   tags: string[];
@@ -28,8 +27,6 @@ export interface NoticeQuery {
   audienceGroup?: string;
   sourceGroup?: string;
   source?: string;
-  category?: string;
-  department?: string;
   page?: number;
   pageSize?: number;
 }
@@ -39,7 +36,6 @@ export interface NoticeFacets {
   sourceGroups: string[];
   sources: string[];
   categories: string[];
-  departments: string[];
 }
 
 export interface NoticeListResult {
@@ -62,8 +58,6 @@ export interface NoticeReference {
 export interface ChatAnswer {
   answer: string;
   references: NoticeReference[];
-  usedFallback: boolean;
-  model: string;
 }
 
 export interface ChatRequestBody {
@@ -71,6 +65,4 @@ export interface ChatRequestBody {
   audienceGroup?: string;
   sourceGroup?: string;
   source?: string;
-  category?: string;
-  department?: string;
 }

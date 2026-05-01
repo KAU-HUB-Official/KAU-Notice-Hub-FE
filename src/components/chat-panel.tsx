@@ -11,7 +11,6 @@ interface ChatMessage {
   role: "user" | "assistant";
   content: string;
   references?: ChatAnswer["references"];
-  meta?: string;
 }
 
 const INITIAL_MESSAGE: ChatMessage = {
@@ -39,7 +38,7 @@ export default function ChatPanel() {
 
     try {
       const audienceGroup = searchParams.get("audience") ?? undefined;
-      const sourceGroup = searchParams.get("group") ?? searchParams.get("sourceGroup") ?? undefined;
+      const sourceGroup = searchParams.get("group") ?? undefined;
       const source = shouldUseSourceFilter(audienceGroup)
         ? searchParams.get("source") ?? undefined
         : undefined;
@@ -68,10 +67,7 @@ export default function ChatPanel() {
         {
           role: "assistant",
           content: data.answer,
-          references: data.references,
-          meta: data.usedFallback
-            ? `fallback 모드 (${data.model})`
-            : `OpenAI 응답 (${data.model})`
+          references: data.references
         }
       ]);
     } catch (error) {
@@ -104,10 +100,6 @@ export default function ChatPanel() {
               }`}
             >
               <p className="break-words whitespace-pre-wrap leading-relaxed">{message.content}</p>
-
-              {message.meta ? (
-                <p className="mt-2 text-xs text-slate-500">{message.meta}</p>
-              ) : null}
 
               {message.references && message.references.length > 0 ? (
                 <div className="mt-3 min-w-0 border-t border-slate-200 pt-2">

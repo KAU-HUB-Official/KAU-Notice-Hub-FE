@@ -1,6 +1,3 @@
-import { JsonNoticeRepository } from "./json-notice-repository";
-import { NoticeService } from "./notice-service";
+import { BackendNoticeService } from "./backend-notice-service";
 
-const repository = new JsonNoticeRepository();
-
-export const noticeService = new NoticeService(repository);
+export const noticeService = new BackendNoticeService();
