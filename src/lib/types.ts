@@ -58,6 +58,8 @@ export interface NoticeReference {
 export interface ChatAnswer {
   answer: string;
   references: NoticeReference[];
+  usedFallback?: boolean;
+  model?: string;
 }
 
 export interface ChatRequestBody {
@@ -65,4 +67,17 @@ export interface ChatRequestBody {
   audienceGroup?: string;
   sourceGroup?: string;
   source?: string;
+  category?: string;
+  department?: string;
 }
+
+export type ChatStreamEvent =
+  | { type: "search_started" }
+  | { type: "search_completed"; references: NoticeReference[] }
+  | {
+      type: "answer_completed";
+      answer: string;
+      usedFallback: boolean;
+      model: string;
+    }
+  | { type: "error"; error: string };

@@ -184,4 +184,39 @@ export class BackendNoticeService {
       "챗봇 응답을 생성하지 못했습니다."
     );
   }
+
+  async askChatStream(
+    body: ChatRequestBody,
+    signal?: AbortSignal
+  ): Promise<Response> {
+    const baseUrl = getBackendApiBaseUrl();
+    const response = await fetch(`${baseUrl}/api/chat/stream`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "text/event-stream"
+      },
+      body: JSON.stringify(body),
+      cache: "no-store",
+      signal
+    });
+
+    if (!response.ok) {
+      const payload = await parseJsonResponse(response);
+      const { message, detail } = getErrorMessage(
+        payload,
+        "챗봇 응답을 생성하지 못했습니다."
+      );
+      throw new BackendApiError(message, response.status, detail);
+    }
+
+    if (!response.body) {
+      throw new BackendApiError(
+        "챗봇 응답 스트림을 받지 못했습니다.",
+        502
+      );
+    }
+
+    return response;
+  }
 }
