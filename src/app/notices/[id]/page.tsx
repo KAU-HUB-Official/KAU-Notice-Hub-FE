@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { MarkdownContent } from "@/components/MarkdownContent";
 import { formatSourceLabel, getNoticeSourceNames } from "@/lib/notices";
 import { noticeService } from "@/server/notices";
 
@@ -70,7 +71,9 @@ export default async function NoticeDetailPage({ params }: NoticeDetailPageProps
 
         <section className="mt-4 rounded-xl border border-slate-200 p-4">
           <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-600">본문</h2>
-          <p className="mt-2 break-words whitespace-pre-wrap text-sm leading-7 text-slate-800">{notice.content}</p>
+          <div className="mt-2">
+            <MarkdownContent content={notice.content} />
+          </div>
         </section>
 
         {notice.attachments.length > 0 ? (
