@@ -47,6 +47,17 @@ export interface NoticeListResult {
   facets: NoticeFacets;
 }
 
+export interface NoticeNavigationItem {
+  id: string;
+  title: string;
+  date?: string;
+}
+
+export interface NoticeNavigation {
+  previous: NoticeNavigationItem | null;
+  next: NoticeNavigationItem | null;
+}
+
 export interface NoticeReference {
   id: string;
   title: string;

@@ -26,10 +26,10 @@ function AudienceTab({
     <button
       type="button"
       onClick={onClick}
-      className={`max-w-[80vw] shrink-0 whitespace-nowrap rounded-full px-4 py-2 text-sm font-medium transition sm:max-w-[320px] ${
+      className={`max-w-[80vw] shrink-0 whitespace-nowrap rounded-md px-4 py-2 text-sm font-medium transition sm:max-w-[320px] ${
         active
           ? "bg-slate-900 text-white shadow-sm"
-          : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+          : "bg-white text-slate-700 ring-1 ring-inset ring-slate-200 hover:bg-slate-50"
       }`}
       aria-pressed={active}
       title={item.label}
@@ -53,7 +53,7 @@ export default function AudienceNav({
   ];
 
   return (
-    <nav aria-label="대상자 필터" className="w-full min-w-0 rounded-xl border border-slate-200 bg-slate-50 p-2">
+    <nav aria-label="대상자 필터" className="w-full min-w-0 rounded-lg border border-slate-200 bg-slate-50 p-2">
       <div className="flex min-w-0 gap-2 overflow-x-auto pb-1 [scrollbar-width:thin] [-webkit-overflow-scrolling:touch]">
         {items.map((item) => (
           <AudienceTab

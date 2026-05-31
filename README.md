@@ -1,4 +1,4 @@
-# KAU Notice Hub MVP
+# KAU Notice Hub
 
 KAU Notice Hub 백엔드 API를 화면에서 탐색하고, 공지 기반 챗봇에 질문할 수 있는 Next.js 프론트엔드입니다.
 
@@ -42,6 +42,8 @@ cp .env.example .env.local
 
 ```env
 NEXT_PUBLIC_API_BASE_URL=http://localhost:8000
+NEXT_PUBLIC_GITHUB_URL=https://github.com/KAU-HUB-Official/KAU-Notice-Hub-Prototype
+NEXT_PUBLIC_CONTACT_EMAIL=contact@kauhub.kr
 ```
 
 백엔드 실행:
@@ -71,6 +73,13 @@ yarn dev
 - `yarn start`: 프로덕션 실행
 - `yarn lint`: ESLint
 - `yarn typecheck`: TypeScript 타입 검사
+
+## 공개 링크 설정
+
+푸터의 GitHub와 문의 이메일은 아래 환경변수로 교체할 수 있습니다.
+
+- `NEXT_PUBLIC_GITHUB_URL`
+- `NEXT_PUBLIC_CONTACT_EMAIL`
 
 ## API 프록시
 

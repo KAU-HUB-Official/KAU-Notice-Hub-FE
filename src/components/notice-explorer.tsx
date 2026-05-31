@@ -13,6 +13,7 @@ import SourceGroupFilter from "./SourceGroupFilter";
 import SourceNav from "./SourceNav";
 
 const PAGE_SIZE = 15;
+const PAGE_WINDOW_SIZE = 1;
 
 export interface NoticeExplorerFilters {
   q: string;
@@ -75,6 +76,53 @@ function buildPageQuery(filters: NoticeExplorerFilters, page: number): URLSearch
   }
 
   return params;
+}
+
+type PaginationItem = number | "ellipsis";
+
+function getPaginationItems(currentPage: number, totalPages: number): PaginationItem[] {
+  if (totalPages <= 7) {
+    return Array.from({ length: totalPages }, (_, index) => index + 1);
+  }
+
+  const pageSet = new Set<number>([1, totalPages]);
+
+  for (
+    let pageNumber = currentPage - PAGE_WINDOW_SIZE;
+    pageNumber <= currentPage + PAGE_WINDOW_SIZE;
+    pageNumber += 1
+  ) {
+    if (pageNumber > 1 && pageNumber < totalPages) {
+      pageSet.add(pageNumber);
+    }
+  }
+
+  if (currentPage <= 4) {
+    [2, 3, 4, 5].forEach((pageNumber) => pageSet.add(pageNumber));
+  }
+
+  if (currentPage >= totalPages - 3) {
+    [totalPages - 4, totalPages - 3, totalPages - 2, totalPages - 1].forEach(
+      (pageNumber) => {
+        if (pageNumber > 1) {
+          pageSet.add(pageNumber);
+        }
+      }
+    );
+  }
+
+  const pages = Array.from(pageSet).sort((first, second) => first - second);
+  const items: PaginationItem[] = [];
+
+  pages.forEach((pageNumber, index) => {
+    const previousPage = pages[index - 1];
+    if (previousPage && pageNumber - previousPage > 1) {
+      items.push("ellipsis");
+    }
+    items.push(pageNumber);
+  });
+
+  return items;
 }
 
 export default function NoticeExplorer({ initialData, initialFilters }: NoticeExplorerProps) {
@@ -200,6 +248,15 @@ export default function NoticeExplorer({ initialData, initialFilters }: NoticeEx
     });
   }
 
+  function handlePageSelect(nextPage: number) {
+    const totalPages = Math.max(1, data.totalPages);
+    const normalizedPage = Math.min(totalPages, Math.max(1, nextPage));
+
+    if (normalizedPage !== page) {
+      setPage(normalizedPage);
+    }
+  }
+
   const hasActiveFilters =
     filters.q.length > 0 ||
     filters.audienceGroup !== ALL_AUDIENCE_GROUPS ||
@@ -207,117 +264,162 @@ export default function NoticeExplorer({ initialData, initialFilters }: NoticeEx
     (shouldUseSourceFilter(filters.audienceGroup) && filters.source !== ALL_SOURCES);
   const showSourceFilter = shouldUseSourceFilter(filters.audienceGroup);
   const showSourceGroupFilter = data.facets.sourceGroups.length > 0;
+  const totalPages = Math.max(1, data.totalPages);
+  const paginationItems = getPaginationItems(data.page, totalPages);
 
   return (
-    <section className="w-full min-w-0 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm md:p-6">
-      <h2 className="text-xl font-semibold text-slate-900">공지 탐색</h2>
-      <p className="mt-1 text-sm text-slate-600">대상자와 중분류, 필요한 경우 세부 홈페이지로 범위를 좁혀보세요.</p>
-
-      <div className="mt-4 min-w-0">
-        <AudienceNav
-          audienceGroups={data.facets.audienceGroups}
-          selectedAudience={filters.audienceGroup}
-          onSelect={handleAudienceSelect}
-        />
-      </div>
-
-      <div className="mt-4 min-w-0">
-        <div className="flex min-w-0 flex-col gap-3">
-          {showSourceGroupFilter ? (
-            <SourceGroupFilter
-              sourceGroups={data.facets.sourceGroups}
-              selectedSourceGroup={filters.sourceGroup}
-              onSelect={handleSourceGroupChange}
-            />
-          ) : null}
-
-          {showSourceFilter ? (
-            <SourceNav
-              sources={data.facets.sources}
-              selectedSource={filters.source}
-              onSelect={handleSourceSelect}
-            />
-          ) : null}
+    <section className="w-full min-w-0 overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
+      <div className="border-b border-slate-200 px-4 py-4 md:px-5">
+        <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+          <div className="min-w-0">
+            <h2 className="text-xl font-semibold text-slate-950">공지 탐색</h2>
+            <p className="mt-1 text-sm text-slate-600">
+              대상자와 중분류, 필요한 경우 세부 홈페이지로 범위를 좁혀보세요.
+            </p>
+          </div>
+          <div className="shrink-0 text-sm text-slate-600">
+            총{" "}
+            <strong className="text-slate-950">
+              {data.total.toLocaleString("ko-KR")}
+            </strong>
+            건
+            {hasActiveFilters ? " (필터 적용)" : ""}
+          </div>
         </div>
       </div>
 
-      <div className="mt-4 min-w-0">
-        <SearchBar
-          value={searchInput}
-          onChange={setSearchInput}
-          onSubmit={handleSearchSubmit}
-          isLoading={isLoading}
-          placeholder="예: 장학금, 수강신청, 졸업요건"
-        />
-      </div>
+      <div className="p-4 md:p-5">
+        <div className="min-w-0">
+          <AudienceNav
+            audienceGroups={data.facets.audienceGroups}
+            selectedAudience={filters.audienceGroup}
+            onSelect={handleAudienceSelect}
+          />
+        </div>
 
-      <div className="mt-3 flex min-w-0 flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
-        <button
-          type="button"
-          onClick={handleReset}
-          className="w-full rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 sm:w-auto"
-        >
-          필터 초기화
-        </button>
-      </div>
+        <div className="mt-4 min-w-0">
+          <div className="flex min-w-0 flex-col gap-3">
+            {showSourceGroupFilter ? (
+              <SourceGroupFilter
+                sourceGroups={data.facets.sourceGroups}
+                selectedSourceGroup={filters.sourceGroup}
+                onSelect={handleSourceGroupChange}
+              />
+            ) : null}
 
-      <div className="mt-3 flex min-w-0 flex-wrap gap-2 text-xs text-slate-600">
-        <span className="max-w-full rounded-full bg-slate-100 px-3 py-1 break-all">
-          대상: {filters.audienceGroup === ALL_AUDIENCE_GROUPS ? "전체" : filters.audienceGroup}
-        </span>
-        {showSourceGroupFilter ? (
+            {showSourceFilter ? (
+              <SourceNav
+                sources={data.facets.sources}
+                selectedSource={filters.source}
+                onSelect={handleSourceSelect}
+              />
+            ) : null}
+          </div>
+        </div>
+
+        <div className="mt-4 min-w-0">
+          <SearchBar
+            value={searchInput}
+            onChange={setSearchInput}
+            onSubmit={handleSearchSubmit}
+            isLoading={isLoading}
+            placeholder="예: 장학금, 수강신청, 졸업요건"
+          />
+        </div>
+
+        <div className="mt-3 flex min-w-0 flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
+          <button
+            type="button"
+            onClick={handleReset}
+            className="w-full rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 sm:w-auto"
+          >
+            필터 초기화
+          </button>
+        </div>
+
+        <div className="mt-3 flex min-w-0 flex-wrap gap-2 text-xs text-slate-600">
           <span className="max-w-full rounded-full bg-slate-100 px-3 py-1 break-all">
-            중분류: {filters.sourceGroup === ALL_SOURCE_GROUPS ? "전체" : filters.sourceGroup}
+            대상:{" "}
+            {filters.audienceGroup === ALL_AUDIENCE_GROUPS
+              ? "전체"
+              : filters.audienceGroup}
           </span>
-        ) : null}
-        {showSourceFilter ? (
+          {showSourceGroupFilter ? (
+            <span className="max-w-full rounded-full bg-slate-100 px-3 py-1 break-all">
+              중분류:{" "}
+              {filters.sourceGroup === ALL_SOURCE_GROUPS
+                ? "전체"
+                : filters.sourceGroup}
+            </span>
+          ) : null}
+          {showSourceFilter ? (
+            <span className="max-w-full rounded-full bg-slate-100 px-3 py-1 break-all">
+              홈페이지: {filters.source === ALL_SOURCES ? "전체" : filters.source}
+            </span>
+          ) : null}
           <span className="max-w-full rounded-full bg-slate-100 px-3 py-1 break-all">
-            홈페이지: {filters.source === ALL_SOURCES ? "전체" : filters.source}
+            검색어: {filters.q || "없음"}
           </span>
+        </div>
+
+        {isLoading ? (
+          <div className="mt-4 text-sm text-brand-700">불러오는 중...</div>
         ) : null}
-        <span className="max-w-full rounded-full bg-slate-100 px-3 py-1 break-all">
-          검색어: {filters.q || "없음"}
-        </span>
-      </div>
 
-      <div className="mt-4 flex min-w-0 flex-wrap items-center justify-between gap-2 text-sm text-slate-600">
-        <span>
-          총 <strong className="text-slate-900">{data.total}</strong>건
-          {hasActiveFilters ? " (필터 적용)" : ""}
-        </span>
-        {isLoading ? <span className="text-brand-700">불러오는 중...</span> : null}
-      </div>
+        {error ? (
+          <div className="mt-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+            {error}
+          </div>
+        ) : null}
 
-      {error ? (
-        <div className="mt-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>
-      ) : null}
+        <div className="mt-4 min-w-0">
+          <NoticeList notices={data.items} cleanCategories={data.facets.categories} />
+        </div>
 
-      <div className="mt-4 min-w-0">
-        <NoticeList notices={data.items} cleanCategories={data.facets.categories} />
-      </div>
+        <div className="mt-5 flex min-w-0 flex-col gap-3 border-t border-slate-200 pt-4 sm:flex-row sm:items-center sm:justify-between">
+          <button
+            type="button"
+            onClick={() => handlePageSelect(page - 1)}
+            disabled={data.page <= 1 || isLoading}
+            className="rounded-lg border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40 sm:w-auto"
+          >
+            이전
+          </button>
 
-      <div className="mt-5 flex min-w-0 flex-wrap items-center justify-between gap-2">
-        <button
-          type="button"
-          onClick={() => setPage((prev) => Math.max(1, prev - 1))}
-          disabled={data.page <= 1 || isLoading}
-          className="rounded-lg border border-slate-300 px-3 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-40"
-        >
-          이전
-        </button>
+          <div className="flex min-w-0 flex-wrap items-center justify-center gap-1.5" aria-label="페이지 선택">
+            {paginationItems.map((item, index) =>
+              item === "ellipsis" ? (
+                <span key={`ellipsis-${index}`} className="px-2 text-sm text-slate-400">
+                  ...
+                </span>
+              ) : (
+                <button
+                  key={item}
+                  type="button"
+                  onClick={() => handlePageSelect(item)}
+                  disabled={isLoading}
+                  aria-current={item === data.page ? "page" : undefined}
+                  className={`h-9 min-w-9 rounded-lg border px-3 text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-40 ${
+                    item === data.page
+                      ? "border-slate-900 bg-slate-900 text-white"
+                      : "border-slate-300 text-slate-700 hover:bg-slate-50"
+                  }`}
+                >
+                  {item}
+                </button>
+              )
+            )}
+          </div>
 
-        <span className="text-sm text-slate-600">
-          {data.page} / {data.totalPages} 페이지
-        </span>
-
-        <button
-          type="button"
-          onClick={() => setPage((prev) => Math.min(data.totalPages, prev + 1))}
-          disabled={data.page >= data.totalPages || isLoading}
-          className="rounded-lg border border-slate-300 px-3 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-40"
-        >
-          다음
-        </button>
+          <button
+            type="button"
+            onClick={() => handlePageSelect(page + 1)}
+            disabled={data.page >= totalPages || isLoading}
+            className="rounded-lg border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40 sm:w-auto"
+          >
+            다음
+          </button>
+        </div>
       </div>
     </section>
   );

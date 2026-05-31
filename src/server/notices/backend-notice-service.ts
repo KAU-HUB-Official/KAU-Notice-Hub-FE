@@ -4,10 +4,13 @@ import {
   Notice,
   NoticeFacets,
   NoticeListResult,
+  NoticeNavigation,
+  NoticeNavigationItem,
   NoticeQuery
 } from "@/lib/types";
 
 const DEFAULT_BACKEND_API_BASE_URL = "http://localhost:8000";
+const NOTICE_NAVIGATION_PAGE_SIZE = 200;
 
 export class BackendApiError extends Error {
   constructor(
@@ -81,6 +84,14 @@ function normalizeNoticeListResult(result: NoticeListResult): NoticeListResult {
     pageSize: Number.isFinite(result.pageSize) ? result.pageSize : 20,
     totalPages: Number.isFinite(result.totalPages) ? result.totalPages : 1,
     facets: normalizeFacets(result.facets)
+  };
+}
+
+function toNoticeNavigationItem(notice: Notice): NoticeNavigationItem {
+  return {
+    id: notice.id,
+    title: notice.title,
+    date: notice.date
   };
 }
 
@@ -169,6 +180,59 @@ export class BackendNoticeService {
 
       throw error;
     }
+  }
+
+  async getNoticeNavigation(id: string): Promise<NoticeNavigation> {
+    let page = 1;
+    let totalPages = 1;
+    let previousPageLastNotice: Notice | null = null;
+
+    while (page <= totalPages) {
+      const result = await this.listNotices({
+        page,
+        pageSize: NOTICE_NAVIGATION_PAGE_SIZE
+      });
+      totalPages = Math.max(1, result.totalPages);
+
+      const noticeIndex = result.items.findIndex((notice) => notice.id === id);
+      if (noticeIndex !== -1) {
+        const previousNotice =
+          noticeIndex > 0 ? result.items[noticeIndex - 1] : previousPageLastNotice;
+        let nextNotice =
+          noticeIndex < result.items.length - 1
+            ? result.items[noticeIndex + 1]
+            : null;
+
+        if (!nextNotice && page < totalPages) {
+          const nextPageResult = await this.listNotices({
+            page: page + 1,
+            pageSize: NOTICE_NAVIGATION_PAGE_SIZE
+          });
+          nextNotice = nextPageResult.items[0] ?? null;
+        }
+
+        return {
+          previous: previousNotice ? toNoticeNavigationItem(previousNotice) : null,
+          next: nextNotice ? toNoticeNavigationItem(nextNotice) : null
+        };
+      }
+
+      previousPageLastNotice =
+        result.items.length > 0
+          ? result.items[result.items.length - 1]
+          : previousPageLastNotice;
+
+      if (result.items.length === 0) {
+        break;
+      }
+
+      page += 1;
+    }
+
+    return {
+      previous: null,
+      next: null
+    };
   }
 
   async askChat(body: ChatRequestBody): Promise<ChatAnswer> {

@@ -101,26 +101,31 @@ export default async function HomePage({ searchParams }: HomePageProps) {
   };
 
   return (
-    <main className="min-h-screen w-full px-4 py-8 sm:px-6 lg:px-8">
+    <main className="w-full px-4 py-7 sm:px-6 lg:px-8 lg:py-10">
       <div className="mx-auto w-full max-w-7xl min-w-0">
-        <header className="mb-6">
-          <p className="text-sm font-medium text-brand-700">MVP</p>
-          <h1 className="mt-1 break-words text-3xl font-bold tracking-tight text-slate-900">
-            KAU Notice Hub
-          </h1>
-          <p className="mt-2 text-slate-600">
-            대상자별 분류 + 중분류 탐색 + AI 질의응답
-          </p>
+        <header className="mb-6 min-w-0 border-b border-slate-200 pb-6">
+          <div className="min-w-0">
+            <p className="text-sm font-semibold text-brand-700">
+              KAU Notice Hub
+            </p>
+            <h1 className="mt-2 break-words text-3xl font-bold tracking-tight text-slate-950 md:text-4xl">
+              한국항공대학교 공지 통합 검색
+            </h1>
+            <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600 md:text-base">
+              필요한 공지를 빠르게 찾고, 궁금한 내용은 공지 기반 챗봇으로
+              확인하세요.
+            </p>
+          </div>
         </header>
 
         <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
-          <div className="min-w-0">
+          <div id="notices" className="min-w-0 scroll-mt-8">
             <NoticeExplorer
               initialData={initialData}
               initialFilters={initialFilters}
             />
           </div>
-          <div className="min-w-0">
+          <div id="chat" className="min-w-0 scroll-mt-8 xl:sticky xl:top-8">
             <ChatPanel />
           </div>
         </div>

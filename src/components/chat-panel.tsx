@@ -188,11 +188,13 @@ export default function ChatPanel() {
   }
 
   return (
-    <section className="flex h-[560px] w-full min-w-0 flex-col rounded-2xl border border-slate-200 bg-white p-4 shadow-sm md:h-[780px] md:p-5">
-      <h2 className="text-xl font-semibold text-slate-900">AI 공지 챗봇</h2>
-      <p className="mt-1 text-sm text-slate-600">예: &quot;수강신청 관련 최신 공지 요약해줘&quot;</p>
+    <section className="flex h-[560px] max-h-[calc(100vh-2rem)] w-full min-w-0 flex-col overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm md:h-[720px] xl:h-[calc(100vh-4rem)] xl:max-h-[780px]">
+      <div className="border-b border-slate-200 px-4 py-4 md:px-5">
+        <h2 className="text-xl font-semibold text-slate-950">AI 공지 챗봇</h2>
+        <p className="mt-1 text-sm text-slate-600">예: &quot;수강신청 관련 최신 공지 요약해줘&quot;</p>
+      </div>
 
-      <div className="mt-4 min-w-0 flex-1 space-y-3 overflow-y-auto rounded-lg border border-slate-200 bg-slate-50 p-3">
+      <div className="min-w-0 flex-1 space-y-3 overflow-y-auto bg-slate-50 p-3 md:p-4">
         {messages.map((message, index) => {
           const placeholder =
             message.role === "assistant" && message.status && message.status !== "done" && !message.content
@@ -207,10 +209,10 @@ export default function ChatPanel() {
           return (
             <div key={`${message.role}-${index}`} className={`flex min-w-0 ${message.role === "user" ? "justify-end" : "justify-start"}`}>
               <div
-                className={`max-w-[92%] min-w-0 rounded-lg p-3 text-sm sm:max-w-[86%] ${
+                className={`max-w-[92%] min-w-0 rounded-lg p-3 text-sm shadow-sm sm:max-w-[86%] ${
                   message.role === "user"
                     ? "bg-brand-600 text-white"
-                    : "bg-white text-slate-800"
+                    : "border border-slate-200 bg-white text-slate-800"
                 }`}
               >
                 <p className={`break-words whitespace-pre-wrap leading-relaxed ${isPending ? "text-slate-500" : ""}`}>
@@ -243,17 +245,17 @@ export default function ChatPanel() {
         })}
       </div>
 
-      <form onSubmit={onSubmit} className="mt-3 flex min-w-0 flex-col gap-2 sm:flex-row">
+      <form onSubmit={onSubmit} className="flex min-w-0 flex-col gap-2 border-t border-slate-200 bg-white p-3 sm:flex-row md:p-4">
         <input
           value={input}
           onChange={(event) => setInput(event.target.value)}
           placeholder="공지 관련 질문을 입력하세요"
-          className="w-full min-w-0 rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none ring-brand-300 focus:ring"
+          className="h-11 w-full min-w-0 rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none ring-brand-300 placeholder:text-slate-400 focus:border-brand-500 focus:ring"
         />
         <button
           type="submit"
           disabled={loading}
-          className="w-full shrink-0 rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
+          className="h-11 w-full shrink-0 rounded-lg bg-slate-900 px-5 text-sm font-medium text-white hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
         >
           {loading ? "생성 중" : "질문"}
         </button>

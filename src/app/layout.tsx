@@ -1,9 +1,12 @@
 import type { Metadata } from "next";
+
+import SiteFooter from "@/components/SiteFooter";
+
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "KAU Notice Hub MVP",
-  description: "JSON 기반 대학 공지 탐색 + AI 챗봇 MVP"
+  title: "KAU Notice Hub",
+  description: "한국항공대학교 공지를 한 곳에서 확인하고 필요한 정보를 빠르게 찾습니다."
 };
 
 export default function RootLayout({
@@ -13,7 +16,12 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ko">
-      <body>{children}</body>
+      <body>
+        <div className="flex min-h-screen flex-col">
+          <div className="flex-1">{children}</div>
+          <SiteFooter />
+        </div>
+      </body>
     </html>
   );
 }

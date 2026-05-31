@@ -34,25 +34,25 @@ export default function NoticeCard({ notice, showCategory }: NoticeCardProps) {
       : sourceNames.map(formatSourceLabel).join(", ");
 
   return (
-    <article className="w-full min-w-0 rounded-xl border border-slate-200 bg-white p-4 transition hover:border-brand-300 hover:shadow-sm">
+    <article className="group w-full min-w-0 rounded-lg border border-slate-200 bg-white p-4 transition hover:border-brand-300 hover:shadow-sm md:p-5">
       <Link href={`/notices/${encodeURIComponent(notice.id)}`} className="block min-w-0">
-        <h3 className="line-clamp-2 break-words text-base font-semibold leading-snug text-slate-900 md:text-lg">
+        <h3 className="line-clamp-2 break-words text-base font-semibold leading-snug text-slate-950 group-hover:text-brand-800 md:text-lg">
           {notice.title}
         </h3>
 
         <div className="mt-3 flex min-w-0 flex-wrap gap-2 text-xs text-slate-600">
-          <span className="max-w-full rounded-full bg-slate-100 px-2 py-1 break-words">{formatDate(notice.date)}</span>
+          <span className="max-w-full rounded-md bg-slate-100 px-2 py-1 break-words">{formatDate(notice.date)}</span>
           {notice.audienceGroup ? (
-            <span className="max-w-full rounded-full bg-slate-100 px-2 py-1 break-words">{notice.audienceGroup}</span>
+            <span className="max-w-full rounded-md bg-slate-100 px-2 py-1 break-words">{notice.audienceGroup}</span>
           ) : null}
           {notice.sourceGroup ? (
-            <span className="max-w-full rounded-full bg-emerald-50 px-2 py-1 text-emerald-700 break-words">{notice.sourceGroup}</span>
+            <span className="max-w-full rounded-md bg-emerald-50 px-2 py-1 text-emerald-700 break-words">{notice.sourceGroup}</span>
           ) : null}
-          <span className="max-w-full rounded-full bg-brand-50 px-2 py-1 text-brand-700 break-words">
+          <span className="max-w-full rounded-md bg-brand-50 px-2 py-1 text-brand-700 break-words">
             {sourceLabel || "홈페이지 미상"}
           </span>
           {showCategory && notice.category ? (
-            <span className="max-w-full rounded-full bg-amber-50 px-2 py-1 text-amber-700 break-all">{notice.category}</span>
+            <span className="max-w-full rounded-md bg-amber-50 px-2 py-1 text-amber-700 break-all">{notice.category}</span>
           ) : null}
         </div>
 
