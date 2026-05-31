@@ -8,6 +8,7 @@ import { NoticeListResult } from "@/lib/types";
 
 import AudienceNav from "./AudienceNav";
 import NoticeList from "./NoticeList";
+import NoticeListSkeleton from "./NoticeListSkeleton";
 import SearchBar from "./SearchBar";
 import SourceGroupFilter from "./SourceGroupFilter";
 import SourceNav from "./SourceNav";
@@ -362,10 +363,6 @@ export default function NoticeExplorer({ initialData, initialFilters }: NoticeEx
           </span>
         </div>
 
-        {isLoading ? (
-          <div className="mt-4 text-sm text-brand-700">불러오는 중...</div>
-        ) : null}
-
         {error ? (
           <div className="mt-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
             {error}
@@ -373,7 +370,11 @@ export default function NoticeExplorer({ initialData, initialFilters }: NoticeEx
         ) : null}
 
         <div className="mt-4 min-w-0">
-          <NoticeList notices={data.items} cleanCategories={data.facets.categories} />
+          {isLoading ? (
+            <NoticeListSkeleton count={data.items.length || PAGE_SIZE} />
+          ) : (
+            <NoticeList notices={data.items} cleanCategories={data.facets.categories} />
+          )}
         </div>
 
         <div className="mt-5 flex min-w-0 flex-col gap-3 border-t border-slate-200 pt-4 sm:flex-row sm:items-center sm:justify-between">

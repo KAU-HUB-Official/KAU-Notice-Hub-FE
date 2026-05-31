@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useRef, useState } from "react";
 
 import { shouldUseSourceFilter } from "@/lib/notices";
 import { ChatStreamEvent, NoticeReference } from "@/lib/types";
@@ -75,6 +75,14 @@ export default function ChatPanel() {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([INITIAL_MESSAGE]);
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const container = scrollRef.current;
+    if (container) {
+      container.scrollTop = container.scrollHeight;
+    }
+  }, [messages]);
 
   function updateLastAssistant(updater: (message: ChatMessage) => ChatMessage) {
     setMessages((prev) => {
@@ -194,7 +202,7 @@ export default function ChatPanel() {
         <p className="mt-1 text-sm text-slate-600">예: &quot;수강신청 관련 최신 공지 요약해줘&quot;</p>
       </div>
 
-      <div className="min-w-0 flex-1 space-y-3 overflow-y-auto bg-slate-50 p-3 md:p-4">
+      <div ref={scrollRef} className="min-w-0 flex-1 space-y-3 overflow-y-auto bg-slate-50 p-3 md:p-4">
         {messages.map((message, index) => {
           const placeholder =
             message.role === "assistant" && message.status && message.status !== "done" && !message.content
