@@ -31,8 +31,8 @@ Browser
 ```env
 NEXT_PUBLIC_API_BASE_URL=https://api.example.com
 NEXT_PUBLIC_SITE_URL=https://kau-notice-hub.vercel.app
-NEXT_PUBLIC_GITHUB_URL=https://github.com/KAU-HUB-Official/KAU-Notice-Hub-Prototype
-NEXT_PUBLIC_CONTACT_EMAIL=contact@kauhub.kr
+NEXT_PUBLIC_GITHUB_URL=https://github.com/KAU-HUB-Official
+NEXT_PUBLIC_CONTACT_EMAIL=qktjwl123@gmail.com
 ```
 
 로컬:
@@ -40,8 +40,8 @@ NEXT_PUBLIC_CONTACT_EMAIL=contact@kauhub.kr
 ```env
 NEXT_PUBLIC_API_BASE_URL=http://localhost:8000
 NEXT_PUBLIC_SITE_URL=http://localhost:3000
-NEXT_PUBLIC_GITHUB_URL=https://github.com/KAU-HUB-Official/KAU-Notice-Hub-Prototype
-NEXT_PUBLIC_CONTACT_EMAIL=contact@kauhub.kr
+NEXT_PUBLIC_GITHUB_URL=https://github.com/KAU-HUB-Official
+NEXT_PUBLIC_CONTACT_EMAIL=qktjwl123@gmail.com
 ```
 
 서버에서만 다른 백엔드 주소를 써야 하면 `NOTICE_API_BASE_URL`을 추가한다. 우선순위는 `NOTICE_API_BASE_URL`, `NEXT_PUBLIC_API_BASE_URL`, `http://localhost:8000` 순서다.

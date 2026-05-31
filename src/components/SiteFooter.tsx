@@ -1,8 +1,7 @@
 import Link from "next/link";
 
-const DEFAULT_GITHUB_URL =
-  "https://github.com/KAU-HUB-Official/KAU-Notice-Hub-Prototype";
-const DEFAULT_CONTACT_EMAIL = "contact@kauhub.kr";
+const DEFAULT_GITHUB_URL = "https://github.com/KAU-HUB-Official";
+const DEFAULT_CONTACT_EMAIL = "qktjwl123@gmail.com";
 
 function envValue(value: string | undefined, fallback: string): string {
   const trimmed = value?.trim();
@@ -43,7 +42,7 @@ export default function SiteFooter() {
             href={`mailto:${contactEmail}`}
             className="rounded-md border border-slate-700 px-3 py-2 text-slate-200 hover:border-slate-500 hover:bg-slate-900 hover:text-white"
           >
-            {contactEmail}
+            Contact
           </Link>
           <Link
             href="https://www.kau.ac.kr"
