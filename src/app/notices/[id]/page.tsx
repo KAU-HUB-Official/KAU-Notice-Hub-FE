@@ -1,8 +1,10 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { MarkdownContent } from "@/components/MarkdownContent";
 import { formatSourceLabel, getNoticeSourceNames } from "@/lib/notices";
+import { buildMetaDescription, siteConfig } from "@/lib/site";
 import { NoticeNavigation } from "@/lib/types";
 import { noticeService } from "@/server/notices";
 
@@ -11,6 +13,53 @@ export const dynamic = "force-dynamic";
 interface NoticeDetailPageProps {
   params: {
     id: string;
+  };
+}
+
+export async function generateMetadata({
+  params
+}: NoticeDetailPageProps): Promise<Metadata> {
+  const noticeId = decodeURIComponent(params.id);
+  const notice = await noticeService.getNoticeById(noticeId);
+
+  if (!notice) {
+    return {
+      title: "공지를 찾을 수 없습니다",
+      description: siteConfig.description,
+      robots: { index: false, follow: true }
+    };
+  }
+
+  const description = buildMetaDescription(notice.summary || notice.content);
+  const canonicalPath = `/notices/${encodeURIComponent(notice.id)}`;
+  const keywords = [
+    notice.audienceGroup,
+    notice.sourceGroup,
+    notice.category,
+    ...getNoticeSourceNames(notice)
+  ].filter((value): value is string => Boolean(value));
+
+  return {
+    title: notice.title,
+    description,
+    keywords: keywords.length > 0 ? keywords : undefined,
+    alternates: {
+      canonical: canonicalPath
+    },
+    openGraph: {
+      type: "article",
+      title: notice.title,
+      description,
+      url: canonicalPath,
+      siteName: siteConfig.name,
+      locale: siteConfig.locale,
+      publishedTime: notice.date || undefined
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: notice.title,
+      description
+    }
   };
 }
 
@@ -35,8 +84,32 @@ export default async function NoticeDetailPage({ params }: NoticeDetailPageProps
 
   const sourceNames = getNoticeSourceNames(notice);
 
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Article",
+    headline: notice.title,
+    description: buildMetaDescription(notice.summary || notice.content),
+    datePublished: notice.date || undefined,
+    inLanguage: "ko",
+    url: `${siteConfig.url}/notices/${encodeURIComponent(notice.id)}`,
+    mainEntityOfPage: {
+      "@type": "WebPage",
+      "@id": `${siteConfig.url}/notices/${encodeURIComponent(notice.id)}`
+    },
+    articleSection: notice.category || notice.sourceGroup || undefined,
+    publisher: {
+      "@type": "Organization",
+      name: "한국항공대학교",
+      alternateName: siteConfig.name
+    }
+  };
+
   return (
     <main className="w-full bg-slate-50 px-4 py-7 sm:px-6 lg:px-8 lg:py-10">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       <div className="mx-auto w-full min-w-0 max-w-4xl rounded-lg border border-slate-200 bg-white p-5 shadow-sm md:p-8">
         <Link href="/" className="inline-flex rounded-md border border-slate-200 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 hover:text-slate-950">
           ← 목록으로 돌아가기

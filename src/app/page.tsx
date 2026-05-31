@@ -9,9 +9,28 @@ import {
   normalizeFilterValue,
   shouldUseSourceFilter,
 } from "@/lib/notices";
+import { siteConfig } from "@/lib/site";
 import { noticeService } from "@/server/notices";
 
 export const dynamic = "force-dynamic";
+
+const websiteJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  name: siteConfig.name,
+  alternateName: "한국항공대학교 공지 통합 검색",
+  url: siteConfig.url,
+  description: siteConfig.description,
+  inLanguage: "ko",
+  potentialAction: {
+    "@type": "SearchAction",
+    target: {
+      "@type": "EntryPoint",
+      urlTemplate: `${siteConfig.url}/?q={search_term_string}`
+    },
+    "query-input": "required name=search_term_string"
+  }
+};
 
 interface HomePageProps {
   searchParams?: Record<string, string | string[] | undefined>;
@@ -102,6 +121,10 @@ export default async function HomePage({ searchParams }: HomePageProps) {
 
   return (
     <main className="w-full px-4 py-7 sm:px-6 lg:px-8 lg:py-10">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteJsonLd) }}
+      />
       <div className="mx-auto w-full max-w-7xl min-w-0">
         <header className="mb-6 min-w-0 border-b border-slate-200 pb-6">
           <div className="min-w-0">
