@@ -1,5 +1,6 @@
 import type { ComponentPropsWithoutRef } from "react";
 import Markdown from "react-markdown";
+import remarkBreaks from "remark-breaks";
 import remarkGfm from "remark-gfm";
 
 interface MarkdownContentProps {
@@ -11,6 +12,7 @@ interface MarkdownContentProps {
  * 백엔드 크롤러가 생성한 Markdown 공지 본문을 안전하게 렌더한다.
  *
  * - `remark-gfm`로 표/체크리스트/취소선 지원
+ * - `remark-breaks`로 단일 줄바꿈(`\n`)을 실제 줄바꿈으로 렌더 (백엔드는 항목을 단일 `\n`으로 분리)
  * - 외부 링크는 새 탭, `rel="noreferrer"`
  * - 이미지는 lazy load + max-width 보정
  * - 기본 HTML은 react-markdown 기본값으로 차단 (raw HTML 무시)
@@ -37,7 +39,7 @@ export function MarkdownContent({ content, className }: MarkdownContentProps) {
   return (
     <div className={className ? `${proseClass} ${className}` : proseClass}>
       <Markdown
-        remarkPlugins={[remarkGfm]}
+        remarkPlugins={[remarkGfm, remarkBreaks]}
         components={{
           a: ({ href, children, ...rest }: ComponentPropsWithoutRef<"a">) => {
             const isExternal =
