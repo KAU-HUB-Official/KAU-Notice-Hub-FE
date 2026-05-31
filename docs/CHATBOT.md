@@ -1,14 +1,18 @@
 # 챗봇
 
-챗봇은 프론트 `/api/chat` route handler를 통해 백엔드 `/api/chat`을 호출한다. 프론트는 질문과 현재 필터 범위만 전달하고, 답변 생성은 백엔드가 담당한다.
+챗봇 UI는 프론트 `/api/chat/stream` route handler를 통해 백엔드 `/api/chat/stream`을 호출하고, SSE(`text/event-stream`)로 스트리밍 응답을 받는다. 프론트는 질문과 현재 필터 범위만 전달하고, 답변 생성은 백엔드가 담당한다.
+
+단발 JSON 응답이 필요한 경우를 위해 `/api/chat`(스트리밍 없음)도 함께 유지한다. 현재 화면(`ChatPanel`)은 `/api/chat/stream`만 사용한다.
 
 ## 요청 흐름
 
 1. 사용자가 `ChatPanel`에 질문을 입력한다.
 2. 현재 URL의 `audience`, `group`, `source`를 함께 읽는다.
 3. `source`는 허용된 대상자에서만 요청에 포함한다.
-4. `/api/chat` route handler가 백엔드 `/api/chat`으로 전달한다.
-5. 응답의 `answer`와 `references`를 화면에 표시한다.
+4. `/api/chat/stream` route handler가 백엔드 `/api/chat/stream`으로 전달한다.
+5. 백엔드가 보내는 SSE 이벤트를 순서대로 처리해 검색 상태, 근거 공지, 최종 답변을 점진적으로 화면에 반영한다.
+
+route handler는 응답이 버퍼링되지 않도록 `Cache-Control: no-cache, no-transform`, `Connection: keep-alive`, `X-Accel-Buffering: no` 헤더를 함께 내려준다.
 
 ## 요청 body
 
@@ -18,23 +22,42 @@ interface ChatRequestBody {
   audienceGroup?: string;
   sourceGroup?: string;
   source?: string;
+  category?: string;
+  department?: string;
 }
 ```
 
 `question`은 필수이며 route handler에서 빈 문자열과 500자 초과 입력을 거부한다.
 
-## 응답
+## SSE 응답 이벤트
+
+각 이벤트는 SSE `data:` 라인의 JSON으로 전달된다.
+
+```ts
+type ChatStreamEvent =
+  | { type: "search_started" }
+  | { type: "search_completed"; references: NoticeReference[] }
+  | { type: "answer_completed"; answer: string; usedFallback: boolean; model: string }
+  | { type: "error"; error: string };
+```
+
+- `search_started`: 관련 공지 검색 시작 (UI는 "검색 중" 표시)
+- `search_completed`: 근거 공지(`references`) 확정, 답변 작성 단계로 전환
+- `answer_completed`: 최종 답변 텍스트 수신
+- `error`: 오류 메시지 표시
+
+`NoticeReference`는 `{ id, title, url?, source?, date? }` 형태다.
+
+## 단발 응답(`/api/chat`)
+
+스트리밍을 쓰지 않는 `/api/chat`은 아래 shape를 반환한다.
 
 ```ts
 interface ChatAnswer {
   answer: string;
-  references: Array<{
-    id: string;
-    title: string;
-    url?: string;
-    source?: string;
-    date?: string;
-  }>;
+  references: NoticeReference[];
+  usedFallback?: boolean;
+  model?: string;
 }
 ```
 
@@ -42,8 +65,10 @@ interface ChatAnswer {
 
 | 역할 | 파일 |
 | --- | --- |
-| 챗봇 UI | `src/components/chat-panel.tsx` |
-| 프론트 route handler | `src/app/api/chat/route.ts` |
+| 챗봇 UI, SSE 파싱 | `src/components/chat-panel.tsx` |
+| 스트리밍 route handler | `src/app/api/chat/stream/route.ts` |
+| 단발 route handler | `src/app/api/chat/route.ts` |
 | 백엔드 API 클라이언트 | `src/server/notices/backend-notice-service.ts` |
+| 스트림 이벤트 타입 | `src/lib/types.ts` |
 
-답변 품질이나 근거 공지 검색 결과가 맞지 않으면 백엔드 `/api/chat`과 `/api/notices?q=...` 응답을 먼저 확인한다.
+답변 품질이나 근거 공지 검색 결과가 맞지 않으면 백엔드 `/api/chat/stream`과 `/api/notices?q=...` 응답을 먼저 확인한다. 답변이 한 덩어리로 늦게 나오면 route handler의 `no-cache`/`X-Accel-Buffering` 헤더와 백엔드 버퍼링 여부를 확인한다.

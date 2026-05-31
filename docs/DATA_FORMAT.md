@@ -60,18 +60,36 @@ interface NoticeListResult {
 
 ## 챗봇 응답
 
+단발 응답(`/api/chat`):
+
 ```ts
+interface NoticeReference {
+  id: string;
+  title: string;
+  url?: string;
+  source?: string;
+  date?: string;
+}
+
 interface ChatAnswer {
   answer: string;
-  references: Array<{
-    id: string;
-    title: string;
-    url?: string;
-    source?: string;
-    date?: string;
-  }>;
+  references: NoticeReference[];
+  usedFallback?: boolean;
+  model?: string;
 }
 ```
+
+스트리밍 응답(`/api/chat/stream`)은 SSE `data:` 라인으로 아래 이벤트를 순서대로 보낸다.
+
+```ts
+type ChatStreamEvent =
+  | { type: "search_started" }
+  | { type: "search_completed"; references: NoticeReference[] }
+  | { type: "answer_completed"; answer: string; usedFallback: boolean; model: string }
+  | { type: "error"; error: string };
+```
+
+자세한 흐름은 [챗봇](CHATBOT.md)을 참고한다.
 
 ## 환경변수
 
