@@ -28,6 +28,7 @@ export async function POST(request: Request) {
     const upstream = await noticeService.askChatStream(
       {
         question,
+        history: body.history,
         audienceGroup: body.audienceGroup,
         sourceGroup: body.sourceGroup,
         source: body.source,

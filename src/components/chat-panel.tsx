@@ -120,6 +120,18 @@ export default function ChatPanel() {
         ? searchParams.get("source") ?? undefined
         : undefined;
 
+      // 직전 대화를 history로 전달해 후속 질문 맥락을 유지한다. 인사말/진행중/에러
+      // 메시지는 빼고, 완료된 user·assistant 턴만 보낸다. 서버가 최근 10개로 자른다.
+      const history = messages
+        .filter(
+          (message) =>
+            message !== INITIAL_MESSAGE &&
+            message.content.trim() !== "" &&
+            (message.role === "user" || message.status === "done")
+        )
+        .slice(-10)
+        .map((message) => ({ role: message.role, content: message.content }));
+
       const response = await fetch("/api/chat/stream", {
         method: "POST",
         headers: {
@@ -128,6 +140,7 @@ export default function ChatPanel() {
         },
         body: JSON.stringify({
           question,
+          history,
           audienceGroup,
           sourceGroup,
           source

@@ -73,8 +73,14 @@ export interface ChatAnswer {
   model?: string;
 }
 
+export interface ChatMessage {
+  role: "user" | "assistant";
+  content: string;
+}
+
 export interface ChatRequestBody {
   question: string;
+  history?: ChatMessage[];
   audienceGroup?: string;
   sourceGroup?: string;
   source?: string;

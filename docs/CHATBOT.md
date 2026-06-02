@@ -19,6 +19,7 @@ route handler는 응답이 버퍼링되지 않도록 `Cache-Control: no-cache, n
 ```ts
 interface ChatRequestBody {
   question: string;
+  history?: { role: "user" | "assistant"; content: string }[];
   audienceGroup?: string;
   sourceGroup?: string;
   source?: string;
@@ -28,6 +29,11 @@ interface ChatRequestBody {
 ```
 
 `question`은 필수이며 route handler에서 빈 문자열과 500자 초과 입력을 거부한다.
+
+`history`는 직전 대화 turn을 담아 후속 질문 맥락을 유지한다. `ChatPanel`이 인사말과
+진행 중·에러 메시지를 제외한 완료된 user·assistant 턴을 최근 10개까지 보내고, 백엔드가
+다시 최근 10개·메시지당 500자로 자른다. 백엔드는 이 history로 검색 없이 직전 답변을
+재가공하는 분기(예: "더 짧게 요약")와 후속 질문의 지시 대명사 해소를 처리한다.
 
 ## SSE 응답 이벤트
 

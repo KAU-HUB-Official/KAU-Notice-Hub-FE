@@ -27,6 +27,7 @@ export async function POST(request: Request) {
 
     const answer = await noticeService.askChat({
       question,
+      history: body.history,
       audienceGroup: body.audienceGroup,
       sourceGroup: body.sourceGroup,
       source: body.source
