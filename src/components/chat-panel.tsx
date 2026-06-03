@@ -16,19 +16,20 @@ interface ChatMessage {
 
 const INITIAL_MESSAGE: ChatMessage = {
   role: "assistant",
-  content: "공지 데이터 기반으로 답변합니다. 일정/제출 요건처럼 중요한 내용은 원문 공지 링크를 함께 확인하세요.",
-  status: "done"
+  content:
+    "공지 데이터 기반으로 답변합니다. 일정/제출 요건처럼 중요한 내용은 원문 공지 링크를 함께 확인하세요.",
+  status: "done",
 };
 
 const STATUS_PLACEHOLDER: Record<NonNullable<ChatMessage["status"]>, string> = {
-  searching: "관련 공지를 검색하고 있어요...",
-  answering: "답변을 작성하고 있어요...",
+  searching: "관련 공지를 검색하고 있어요",
+  answering: "답변을 작성하고 있어요",
   done: "",
-  error: ""
+  error: "",
 };
 
 async function* readSseEvents(
-  response: Response
+  response: Response,
 ): AsyncGenerator<ChatStreamEvent, void, unknown> {
   if (!response.body) {
     return;
@@ -110,14 +111,14 @@ export default function ChatPanel() {
     setMessages((prev) => [
       ...prev,
       { role: "user", content: question },
-      { role: "assistant", content: "", status: "searching" }
+      { role: "assistant", content: "", status: "searching" },
     ]);
 
     try {
       const audienceGroup = searchParams.get("audience") ?? undefined;
       const sourceGroup = searchParams.get("group") ?? undefined;
       const source = shouldUseSourceFilter(audienceGroup)
-        ? searchParams.get("source") ?? undefined
+        ? (searchParams.get("source") ?? undefined)
         : undefined;
 
       // 직전 대화를 history로 전달해 후속 질문 맥락을 유지한다. 인사말/진행중/에러
@@ -127,7 +128,7 @@ export default function ChatPanel() {
           (message) =>
             message !== INITIAL_MESSAGE &&
             message.content.trim() !== "" &&
-            (message.role === "user" || message.status === "done")
+            (message.role === "user" || message.status === "done"),
         )
         .slice(-10)
         .map((message) => ({ role: message.role, content: message.content }));
@@ -136,15 +137,15 @@ export default function ChatPanel() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Accept: "text/event-stream"
+          Accept: "text/event-stream",
         },
         body: JSON.stringify({
           question,
           history,
           audienceGroup,
           sourceGroup,
-          source
-        })
+          source,
+        }),
       });
 
       if (!response.ok || !response.body) {
@@ -157,14 +158,14 @@ export default function ChatPanel() {
           case "search_started":
             updateLastAssistant((message) => ({
               ...message,
-              status: "searching"
+              status: "searching",
             }));
             break;
           case "search_completed":
             updateLastAssistant((message) => ({
               ...message,
               status: "answering",
-              references: streamEvent.references
+              references: streamEvent.references,
             }));
             break;
           case "answer_completed":
@@ -172,14 +173,14 @@ export default function ChatPanel() {
             updateLastAssistant((message) => ({
               ...message,
               status: "done",
-              content: streamEvent.answer
+              content: streamEvent.answer,
             }));
             break;
           case "error":
             updateLastAssistant((message) => ({
               ...message,
               status: "error",
-              content: streamEvent.error
+              content: streamEvent.error,
             }));
             break;
         }
@@ -192,8 +193,9 @@ export default function ChatPanel() {
             : {
                 ...message,
                 status: "error",
-                content: "응답이 완료되지 않았습니다. 잠시 후 다시 시도해주세요."
-              }
+                content:
+                  "응답이 완료되지 않았습니다. 잠시 후 다시 시도해주세요.",
+              },
         );
       }
     } catch (error) {
@@ -201,7 +203,7 @@ export default function ChatPanel() {
       updateLastAssistant((message) => ({
         ...message,
         status: "error",
-        content: "응답 생성 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요."
+        content: "응답 생성 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.",
       }));
     } finally {
       setLoading(false);
@@ -212,23 +214,35 @@ export default function ChatPanel() {
     <section className="flex h-[560px] max-h-[calc(100vh-2rem)] w-full min-w-0 flex-col overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm md:h-[720px] xl:h-[calc(100vh-4rem)] xl:max-h-[780px]">
       <div className="border-b border-slate-200 px-4 py-4 md:px-5">
         <h2 className="text-xl font-semibold text-slate-950">AI 공지 챗봇</h2>
-        <p className="mt-1 text-sm text-slate-600">예: &quot;수강신청 관련 최신 공지 요약해줘&quot;</p>
+        <p className="mt-1 text-sm text-slate-600">
+          예: &quot;수강신청 관련 최신 공지 요약해줘&quot;
+        </p>
       </div>
 
-      <div ref={scrollRef} className="min-w-0 flex-1 space-y-3 overflow-y-auto bg-slate-50 p-3 md:p-4">
+      <div
+        ref={scrollRef}
+        className="min-w-0 flex-1 space-y-3 overflow-y-auto bg-slate-50 p-3 md:p-4"
+      >
         {messages.map((message, index) => {
           const placeholder =
-            message.role === "assistant" && message.status && message.status !== "done" && !message.content
+            message.role === "assistant" &&
+            message.status &&
+            message.status !== "done" &&
+            !message.content
               ? STATUS_PLACEHOLDER[message.status]
               : "";
           const displayContent = message.content || placeholder;
           const isPending =
             message.role === "assistant" &&
-            (message.status === "searching" || message.status === "answering") &&
+            (message.status === "searching" ||
+              message.status === "answering") &&
             !message.content;
 
           return (
-            <div key={`${message.role}-${index}`} className={`flex min-w-0 ${message.role === "user" ? "justify-end" : "justify-start"}`}>
+            <div
+              key={`${message.role}-${index}`}
+              className={`flex min-w-0 ${message.role === "user" ? "justify-end" : "justify-start"}`}
+            >
               <div
                 className={`max-w-[92%] min-w-0 rounded-lg p-3 text-sm shadow-sm sm:max-w-[86%] ${
                   message.role === "user"
@@ -236,23 +250,39 @@ export default function ChatPanel() {
                     : "border border-slate-200 bg-white text-slate-800"
                 }`}
               >
-                <p className={`break-words whitespace-pre-wrap leading-relaxed ${isPending ? "text-slate-500" : ""}`}>
+                <p
+                  className={`break-words whitespace-pre-wrap leading-relaxed ${isPending ? "text-slate-500" : ""}`}
+                >
                   {displayContent}
-                  {isPending ? <span className="ml-1 animate-pulse">…</span> : null}
+                  {isPending ? (
+                    <span className="ml-1 animate-pulse">…</span>
+                  ) : null}
                 </p>
 
                 {message.references && message.references.length > 0 ? (
                   <div className="mt-3 min-w-0 border-t border-slate-200 pt-2">
-                    <p className="mb-1 text-xs font-semibold text-slate-500">근거 공지</p>
+                    <p className="mb-1 text-xs font-semibold text-slate-500">
+                      근거 공지
+                    </p>
                     <ul className="space-y-1">
                       {message.references.map((reference) => (
-                        <li key={reference.id} className="break-words text-xs text-slate-600">
+                        <li
+                          key={reference.id}
+                          className="break-words text-xs text-slate-600"
+                        >
                           {reference.url ? (
-                            <Link href={reference.url} target="_blank" rel="noreferrer" className="break-all hover:underline">
+                            <Link
+                              href={reference.url}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="break-all hover:underline"
+                            >
                               {reference.title}
                             </Link>
                           ) : (
-                            <span className="break-words">{reference.title}</span>
+                            <span className="break-words">
+                              {reference.title}
+                            </span>
                           )}
                           {reference.date ? ` (${reference.date})` : ""}
                         </li>
@@ -266,7 +296,10 @@ export default function ChatPanel() {
         })}
       </div>
 
-      <form onSubmit={onSubmit} className="flex min-w-0 flex-col gap-2 border-t border-slate-200 bg-white p-3 sm:flex-row md:p-4">
+      <form
+        onSubmit={onSubmit}
+        className="flex min-w-0 flex-col gap-2 border-t border-slate-200 bg-white p-3 sm:flex-row md:p-4"
+      >
         <input
           value={input}
           onChange={(event) => setInput(event.target.value)}
