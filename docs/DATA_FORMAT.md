@@ -85,9 +85,12 @@ interface ChatAnswer {
 type ChatStreamEvent =
   | { type: "search_started" }
   | { type: "search_completed"; references: NoticeReference[] }
+  | { type: "answer_delta"; delta: string }
   | { type: "answer_completed"; answer: string; usedFallback: boolean; model: string }
   | { type: "error"; error: string };
 ```
+
+`answer_delta`는 LLM 답변 토큰 조각을 도착 순서대로 0회 이상 보내며, `answer_completed.answer`는 모든 `delta`를 이어 붙인 전문과 같다. fallback 경로에서는 `answer_delta` 없이 `answer_completed`만 온다.
 
 자세한 흐름은 [챗봇](CHATBOT.md)을 참고한다.
 

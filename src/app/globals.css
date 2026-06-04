@@ -25,3 +25,43 @@ svg {
 a {
   @apply text-brand-700 hover:text-brand-800;
 }
+
+/* 챗봇: 진행중 표시용 점 애니메이션 */
+@keyframes chat-dot-bounce {
+  0%,
+  70%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.35;
+  }
+  35% {
+    transform: translateY(-3px);
+    opacity: 1;
+  }
+}
+
+.chat-typing-dot {
+  animation: chat-dot-bounce 1.1s ease-in-out infinite;
+}
+
+/* 챗봇: 답변 타이핑 캐럿 깜빡임 */
+@keyframes chat-caret-blink {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0;
+  }
+}
+
+.chat-caret {
+  animation: chat-caret-blink 1s step-end infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chat-typing-dot,
+  .chat-caret {
+    animation: none;
+  }
+}

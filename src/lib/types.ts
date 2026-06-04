@@ -91,6 +91,7 @@ export interface ChatRequestBody {
 export type ChatStreamEvent =
   | { type: "search_started" }
   | { type: "search_completed"; references: NoticeReference[] }
+  | { type: "answer_delta"; delta: string }
   | {
       type: "answer_completed";
       answer: string;

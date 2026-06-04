@@ -43,16 +43,30 @@ interface ChatRequestBody {
 type ChatStreamEvent =
   | { type: "search_started" }
   | { type: "search_completed"; references: NoticeReference[] }
+  | { type: "answer_delta"; delta: string }
   | { type: "answer_completed"; answer: string; usedFallback: boolean; model: string }
   | { type: "error"; error: string };
 ```
 
-- `search_started`: 관련 공지 검색 시작 (UI는 "검색 중" 표시)
-- `search_completed`: 근거 공지(`references`) 확정, 답변 작성 단계로 전환
-- `answer_completed`: 최종 답변 텍스트 수신
+- `search_started`: 관련 공지 검색 시작 (UI는 "관련 공지를 검색하고 있어요" 안내 + 점 애니메이션 표시)
+- `search_completed`: 근거 공지(`references`) 확정, 답변 작성 단계로 전환 ("답변을 작성하고 있어요" 안내 + 점 애니메이션)
+- `answer_delta`: LLM 답변 토큰 조각(`delta`). 도착 순서대로 0회 이상 온다. UI는 받는 즉시 누적해 화면에 흘려 보여준다.
+- `answer_completed`: 최종 답변 텍스트 수신. `answer`는 모든 `delta`를 이어 붙인 전문과 같다.
 - `error`: 오류 메시지 표시
 
 `NoticeReference`는 `{ id, title, url?, source?, date? }` 형태다.
+
+## 답변 표시(토큰 스트리밍 + 타이핑 애니메이션)
+
+백엔드는 LLM 답변을 `answer_delta`로 토큰 단위로 흘려보내고 마지막에 `answer_completed`로
+전문을 확정한다. `ChatPanel`은 `answer_delta`가 올 때마다 그대로 누적해 실시간으로 렌더하고,
+`answer_completed`에서 누적 텍스트를 전문으로 확정한다(끝에 깜빡이는 캐럿 표시).
+다만 RAG 비활성·키 부재·도메인 가드처럼 `answer_delta` 없이 `answer_completed`만 오는
+fallback 경로에서는, 전문을 글자 단위로 점진 노출하는 클라이언트 타이핑 애니메이션으로
+대체해 보여준다(추가 네트워크 요청 없음). 검색/작성 진행 단계에서는 안내 문구와 함께 점
+3개가 튀는 애니메이션을 보여준다. `prefers-reduced-motion: reduce` 환경에서는 타이핑·캐럿·점
+애니메이션을 끄고 답변 전문을 즉시 표시한다. 애니메이션 keyframe은 `src/app/globals.css`에
+정의돼 있다.
 
 ## 단발 응답(`/api/chat`)
 

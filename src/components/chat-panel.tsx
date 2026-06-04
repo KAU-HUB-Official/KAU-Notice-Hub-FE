@@ -12,6 +12,30 @@ interface ChatMessage {
   content: string;
   references?: NoticeReference[];
   status?: "searching" | "answering" | "done" | "error";
+  typing?: boolean;
+}
+
+const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
+
+function prefersReducedMotion() {
+  return (
+    typeof window !== "undefined" &&
+    window.matchMedia?.("(prefers-reduced-motion: reduce)").matches === true
+  );
+}
+
+function TypingDots() {
+  return (
+    <span className="inline-flex items-center gap-1" aria-hidden>
+      {[0, 1, 2].map((index) => (
+        <span
+          key={index}
+          className="chat-typing-dot inline-block h-1.5 w-1.5 rounded-full bg-slate-400"
+          style={{ animationDelay: `${index * 0.18}s` }}
+        />
+      ))}
+    </span>
+  );
 }
 
 const INITIAL_MESSAGE: ChatMessage = {
@@ -98,6 +122,53 @@ export default function ChatPanel() {
     });
   }
 
+  // 토큰 스트리밍 없이 전문이 한 번에 오는 경우(local fallback·도메인 가드 등)에만
+  // 글자 단위로 점진적으로 드러내 타이핑 느낌을 준다. 실제 LLM 답변은 백엔드가
+  // answer_delta로 토큰을 흘려보내므로 도착하는 대로 그대로 누적해 렌더한다.
+  async function typeOutAnswer(answer: string) {
+    if (!answer) {
+      updateLastAssistant((message) => ({
+        ...message,
+        status: "done",
+        content: "",
+        typing: false,
+      }));
+      return;
+    }
+
+    // 모션 최소화 설정이면 즉시 전체를 표시한다.
+    if (prefersReducedMotion()) {
+      updateLastAssistant((message) => ({
+        ...message,
+        status: "done",
+        content: answer,
+        typing: false,
+      }));
+      return;
+    }
+
+    updateLastAssistant((message) => ({
+      ...message,
+      status: "done",
+      content: "",
+      typing: true,
+    }));
+
+    // 길이에 비례해 한 틱에 노출할 글자 수를 정해 총 소요시간을 일정하게 유지한다.
+    const step = Math.max(1, Math.ceil(answer.length / 220));
+    for (let cursor = step; cursor < answer.length; cursor += step) {
+      const slice = answer.slice(0, cursor);
+      updateLastAssistant((message) => ({ ...message, content: slice }));
+      await sleep(16);
+    }
+
+    updateLastAssistant((message) => ({
+      ...message,
+      content: answer,
+      typing: false,
+    }));
+  }
+
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
@@ -153,6 +224,7 @@ export default function ChatPanel() {
       }
 
       let receivedAnswer = false;
+      let receivedDelta = false;
       for await (const streamEvent of readSseEvents(response)) {
         switch (streamEvent.type) {
           case "search_started":
@@ -168,13 +240,30 @@ export default function ChatPanel() {
               references: streamEvent.references,
             }));
             break;
-          case "answer_completed":
-            receivedAnswer = true;
+          case "answer_delta":
+            // 토큰이 도착할 때마다 그대로 누적해 실시간으로 렌더한다.
+            receivedDelta = true;
             updateLastAssistant((message) => ({
               ...message,
-              status: "done",
-              content: streamEvent.answer,
+              status: "answering",
+              content: message.content + streamEvent.delta,
+              typing: true,
             }));
+            break;
+          case "answer_completed":
+            receivedAnswer = true;
+            if (receivedDelta) {
+              // 스트리밍으로 받은 토큰을 최종 전문으로 확정한다(누적값 = answer).
+              updateLastAssistant((message) => ({
+                ...message,
+                status: "done",
+                content: streamEvent.answer,
+                typing: false,
+              }));
+            } else {
+              // 토큰 없이 전문만 온 경우(fallback 등)는 타이핑 애니메이션으로 노출.
+              await typeOutAnswer(streamEvent.answer);
+            }
             break;
           case "error":
             updateLastAssistant((message) => ({
@@ -250,14 +339,22 @@ export default function ChatPanel() {
                     : "border border-slate-200 bg-white text-slate-800"
                 }`}
               >
-                <p
-                  className={`break-words whitespace-pre-wrap leading-relaxed ${isPending ? "text-slate-500" : ""}`}
-                >
-                  {displayContent}
-                  {isPending ? (
-                    <span className="ml-1 animate-pulse">…</span>
-                  ) : null}
-                </p>
+                {isPending ? (
+                  <p className="flex items-center gap-2 leading-relaxed text-slate-500">
+                    <span>{placeholder}</span>
+                    <TypingDots />
+                  </p>
+                ) : (
+                  <p className="break-words whitespace-pre-wrap leading-relaxed">
+                    {displayContent}
+                    {message.typing ? (
+                      <span
+                        aria-hidden
+                        className="chat-caret ml-0.5 inline-block h-[1em] w-[2px] translate-y-[0.15em] rounded-sm bg-slate-400 align-baseline"
+                      />
+                    ) : null}
+                  </p>
+                )}
 
                 {message.references && message.references.length > 0 ? (
                   <div className="mt-3 min-w-0 border-t border-slate-200 pt-2">
