@@ -30,7 +30,7 @@ export async function generateMetadata({
     };
   }
 
-  const description = buildMetaDescription(notice.summary || notice.content);
+  const description = buildMetaDescription(notice.content);
   const canonicalPath = `/notices/${encodeURIComponent(notice.id)}`;
   const keywords = [
     notice.audienceGroup,
@@ -88,7 +88,7 @@ export default async function NoticeDetailPage({ params }: NoticeDetailPageProps
     "@context": "https://schema.org",
     "@type": "Article",
     headline: notice.title,
-    description: buildMetaDescription(notice.summary || notice.content),
+    description: buildMetaDescription(notice.content),
     datePublished: notice.date || undefined,
     inLanguage: "ko",
     url: `${siteConfig.url}/notices/${encodeURIComponent(notice.id)}`,

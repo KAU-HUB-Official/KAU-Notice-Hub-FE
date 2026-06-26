@@ -26,7 +26,7 @@ interface NoticeCardProps {
 }
 
 export default function NoticeCard({ notice, showCategory }: NoticeCardProps) {
-  const summary = notice.summary ?? notice.content.slice(0, 200);
+  const summary = notice.content.slice(0, 200);
   const sourceNames = getNoticeSourceNames(notice);
   const sourceLabel =
     sourceNames.length > 2

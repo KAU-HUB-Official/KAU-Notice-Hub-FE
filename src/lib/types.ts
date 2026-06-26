@@ -17,7 +17,6 @@ export interface Notice {
   sourceGroups?: string[];
   category?: string;
   date?: string;
-  summary?: string;
   tags: string[];
   attachments: NoticeAttachment[];
 }
