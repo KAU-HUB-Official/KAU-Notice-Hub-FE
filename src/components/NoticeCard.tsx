@@ -25,8 +25,23 @@ interface NoticeCardProps {
   showCategory: boolean;
 }
 
+// 목록 카드 미리보기용 평문 스니펫. content는 Markdown(제목/목록/표/이미지)이라
+// 줄바꿈·기호를 그대로 보여주면 지저분하므로, 마크다운 노이즈를 걷어내고 공백을
+// 한 칸으로 합쳐 한 줄 요약으로 만든다. 이미지뿐인 공지는 빈 문자열이 된다.
+function toPreview(markdown: string, maxLength = 200): string {
+  const text = markdown
+    .replace(/!\[[^\]]*\]\([^)]*\)/g, " ") // 이미지 마크다운 제거
+    .replace(/\[([^\]]*)\]\([^)]*\)/g, "$1") // 링크 → 보이는 텍스트
+    .replace(/^\s{0,3}#{1,6}\s+/gm, "") // 헤딩 마커
+    .replace(/^\s{0,3}[-*+]\s+/gm, "") // 목록 불릿
+    .replace(/[#*`>_~|]/g, " ") // 남은 강조/표 기호
+    .replace(/\s+/g, " ") // 줄바꿈 포함 모든 공백을 한 칸으로
+    .trim();
+  return text.length > maxLength ? `${text.slice(0, maxLength)}…` : text;
+}
+
 export default function NoticeCard({ notice, showCategory }: NoticeCardProps) {
-  const summary = notice.content.slice(0, 200);
+  const summary = toPreview(notice.content);
   const sourceNames = getNoticeSourceNames(notice);
   const sourceLabel =
     sourceNames.length > 2
@@ -56,7 +71,9 @@ export default function NoticeCard({ notice, showCategory }: NoticeCardProps) {
           ) : null}
         </div>
 
-        <p className="mt-3 line-clamp-3 break-words whitespace-pre-wrap text-sm leading-6 text-slate-700">{summary}</p>
+        {summary ? (
+          <p className="mt-3 line-clamp-2 break-words text-sm leading-6 text-slate-700">{summary}</p>
+        ) : null}
       </Link>
     </article>
   );
