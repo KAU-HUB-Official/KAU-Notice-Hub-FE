@@ -339,7 +339,7 @@ export default function ChatPanel() {
       <div className="border-b border-slate-200 px-4 py-4 md:px-5">
         <h2 className="text-xl font-semibold text-slate-950">AI 공지 챗봇</h2>
         <p className="mt-1 text-sm text-slate-600">
-          공지 데이터 기반으로 답변합니다.
+          입력하신 내용은 익명으로 처리되며, 챗봇 개선을 위해 활용될 수 있어요.
         </p>
       </div>
 
