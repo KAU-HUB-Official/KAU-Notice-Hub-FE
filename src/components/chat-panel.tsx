@@ -41,7 +41,7 @@ function TypingDots() {
 const INITIAL_MESSAGE: ChatMessage = {
   role: "assistant",
   content:
-    "저는 학교 공지 데이터를 바탕으로 이런 질문에 답할 수 있습니다:\n\n" +
+    "저는 학교 공지 데이터를 바탕으로 이런 질문에 답할 수 있어요:\n\n" +
     "• 수강신청 언제예요?\n" +
     "• 성적 언제 나오나요?\n" +
     "• 진행 중인 공모전이나 대회가 있나요?\n" +
@@ -55,8 +55,8 @@ const INITIAL_MESSAGE: ChatMessage = {
 };
 
 const STATUS_PLACEHOLDER: Record<NonNullable<ChatMessage["status"]>, string> = {
-  searching: "관련 공지를 검색하고 있습니다",
-  answering: "답변을 작성하고 있습니다",
+  searching: "관련 공지를 검색하고 있어요",
+  answering: "답변을 작성하고 있어요",
   done: "",
   error: "",
 };
