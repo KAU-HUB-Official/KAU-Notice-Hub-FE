@@ -9,6 +9,8 @@ import {
   NoticeQuery
 } from "@/lib/types";
 
+import { headers as nextHeaders } from "next/headers";
+
 const DEFAULT_BACKEND_API_BASE_URL = "http://localhost:8000";
 const NOTICE_NAVIGATION_PAGE_SIZE = 200;
 
@@ -30,6 +32,32 @@ function getBackendApiBaseUrl(): string {
     DEFAULT_BACKEND_API_BASE_URL;
 
   return rawBaseUrl.replace(/\/+$/, "");
+}
+
+// BFF는 백엔드를 서버사이드 fetch로 호출하므로, 백엔드 입장에선 모든 요청이 Vercel
+// IP 하나로 보인다. per-IP 레이트리밋이 동작하려면 실제 브라우저 IP를 전달해야 한다.
+// NOTICE_API_INTERNAL_TOKEN(백엔드 INTERNAL_PROXY_TOKEN과 동일)이 설정된 경우에만,
+// 들어온 요청의 client IP를 X-Client-IP로, 토큰을 X-Internal-Token으로 함께 보낸다.
+// 토큰 미설정 시 헤더를 만들지 않으므로 dynamic 렌더 opt-in도 일어나지 않는다.
+function buildForwardHeaders(): Record<string, string> {
+  const token = process.env.NOTICE_API_INTERNAL_TOKEN;
+  if (!token) {
+    return {};
+  }
+
+  try {
+    const incoming = nextHeaders();
+    const forwardedFor = incoming.get("x-forwarded-for");
+    const clientIp =
+      forwardedFor?.split(",")[0]?.trim() || incoming.get("x-real-ip")?.trim();
+    if (!clientIp) {
+      return {};
+    }
+    return { "X-Internal-Token": token, "X-Client-IP": clientIp };
+  } catch {
+    // 요청 스코프 밖(빌드/정적 생성 등)에서는 헤더를 읽을 수 없다 → 전달 생략.
+    return {};
+  }
 }
 
 function appendStringParam(params: URLSearchParams, key: string, value?: string): void {
@@ -131,6 +159,9 @@ async function requestBackendJson<T>(
   const headers = new Headers(init.headers);
   if (!headers.has("Accept")) {
     headers.set("Accept", "application/json");
+  }
+  for (const [key, value] of Object.entries(buildForwardHeaders())) {
+    headers.set(key, value);
   }
 
   const response = await fetch(`${baseUrl}${path}`, {
@@ -258,7 +289,8 @@ export class BackendNoticeService {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Accept: "text/event-stream"
+        Accept: "text/event-stream",
+        ...buildForwardHeaders()
       },
       body: JSON.stringify(body),
       cache: "no-store",

@@ -41,7 +41,16 @@ function TypingDots() {
 const INITIAL_MESSAGE: ChatMessage = {
   role: "assistant",
   content:
-    "공지 데이터 기반으로 답변합니다. 일정/제출 요건처럼 중요한 내용은 원문 공지 링크를 함께 확인하세요.",
+    "저는 학교 공지 데이터를 바탕으로 이런 질문에 답할 수 있어요:\n\n" +
+    "• 수강신청 언제예요?\n" +
+    "• 성적 언제 나오나요?\n" +
+    "• 진행 중인 공모전이나 대회가 있나요?\n" +
+    "• 신청 가능한 장학금이 있나요?\n" +
+    "• 이번 학기 등록금 납부 기간은 언제예요?\n" +
+    "• 계절학기 신청 일정 알려줘\n" +
+    "• 교내 채용·인턴 공고 있어?\n" +
+    "• 기숙사 신청은 언제 시작해요?\n\n" +
+    "일정·제출 요건처럼 중요한 내용은 원문 공지 링크도 함께 확인하세요.",
   status: "done",
 };
 
@@ -51,6 +60,21 @@ const STATUS_PLACEHOLDER: Record<NonNullable<ChatMessage["status"]>, string> = {
   done: "",
   error: "",
 };
+
+async function extractErrorMessage(
+  response: Response,
+  fallback: string,
+): Promise<string> {
+  try {
+    const data = (await response.json()) as { error?: unknown };
+    if (typeof data?.error === "string" && data.error.trim()) {
+      return data.error;
+    }
+  } catch {
+    // 본문이 JSON이 아니거나 비어 있으면 fallback을 사용한다.
+  }
+  return fallback;
+}
 
 async function* readSseEvents(
   response: Response,
@@ -220,7 +244,18 @@ export default function ChatPanel() {
       });
 
       if (!response.ok || !response.body) {
-        throw new Error(`Chat stream API failed: ${response.status}`);
+        // 429(요청 과다) 등은 백엔드가 내려준 메시지를 그대로 보여주고, 없으면 기본 안내.
+        const fallback =
+          response.status === 429
+            ? "질문 요청이 너무 많아요. 잠시 후 다시 시도해주세요."
+            : "응답 생성 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.";
+        const content = await extractErrorMessage(response, fallback);
+        updateLastAssistant((message) => ({
+          ...message,
+          status: "error",
+          content,
+        }));
+        return;
       }
 
       let receivedAnswer = false;
@@ -304,7 +339,7 @@ export default function ChatPanel() {
       <div className="border-b border-slate-200 px-4 py-4 md:px-5">
         <h2 className="text-xl font-semibold text-slate-950">AI 공지 챗봇</h2>
         <p className="mt-1 text-sm text-slate-600">
-          예: &quot;수강신청 관련 최신 공지 요약해줘&quot;
+          공지 데이터 기반으로 답변합니다.
         </p>
       </div>
 
