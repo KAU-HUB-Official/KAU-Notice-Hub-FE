@@ -41,7 +41,7 @@ function TypingDots() {
 const INITIAL_MESSAGE: ChatMessage = {
   role: "assistant",
   content:
-    "저는 학교 공지 데이터를 바탕으로 이런 질문에 답할 수 있어요:\n\n" +
+    "저는 학교 공지 데이터를 바탕으로 이런 질문에 답할 수 있습니다:\n\n" +
     "• 수강신청 언제예요?\n" +
     "• 성적 언제 나오나요?\n" +
     "• 진행 중인 공모전이나 대회가 있나요?\n" +
@@ -55,8 +55,8 @@ const INITIAL_MESSAGE: ChatMessage = {
 };
 
 const STATUS_PLACEHOLDER: Record<NonNullable<ChatMessage["status"]>, string> = {
-  searching: "관련 공지를 검색하고 있어요",
-  answering: "답변을 작성하고 있어요",
+  searching: "관련 공지를 검색하고 있습니다",
+  answering: "답변을 작성하고 있습니다",
   done: "",
   error: "",
 };
@@ -339,7 +339,7 @@ export default function ChatPanel() {
       <div className="border-b border-slate-200 px-4 py-4 md:px-5">
         <h2 className="text-xl font-semibold text-slate-950">AI 공지 챗봇</h2>
         <p className="mt-1 text-sm text-slate-600">
-          입력하신 내용은 익명으로 처리되며, 챗봇 개선을 위해 활용될 수 있어요.
+          입력하신 내용은 익명으로 처리되며, 챗봇 개선을 위해 활용될 수 있습니다.
         </p>
       </div>
 
