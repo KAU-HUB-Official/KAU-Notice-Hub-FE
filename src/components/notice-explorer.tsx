@@ -126,6 +126,16 @@ function getPaginationItems(currentPage: number, totalPages: number): Pagination
   return items;
 }
 
+// 적용된 필터 칩: 기본값(전체/없음)은 차분하게, 실제 적용된 값은 강조해 무엇이
+// 걸려 있는지 한눈에 보이도록 한다.
+function appliedFilterChipClass(active: boolean): string {
+  return `max-w-full rounded-full px-3 py-1 break-all ${
+    active
+      ? "bg-brand-50 text-brand-700 ring-1 ring-inset ring-brand-200"
+      : "bg-slate-100 text-slate-500"
+  }`;
+}
+
 export default function NoticeExplorer({ initialData, initialFilters }: NoticeExplorerProps) {
   const router = useRouter();
   const pathname = usePathname();
@@ -265,6 +275,10 @@ export default function NoticeExplorer({ initialData, initialFilters }: NoticeEx
     (shouldUseSourceFilter(filters.audienceGroup) && filters.source !== ALL_SOURCES);
   const showSourceFilter = shouldUseSourceFilter(filters.audienceGroup);
   const showSourceGroupFilter = data.facets.sourceGroups.length > 0;
+  const audienceActive = filters.audienceGroup !== ALL_AUDIENCE_GROUPS;
+  const sourceGroupActive = filters.sourceGroup !== ALL_SOURCE_GROUPS;
+  const sourceActive = showSourceFilter && filters.source !== ALL_SOURCES;
+  const queryActive = filters.q.length > 0;
   const totalPages = Math.max(1, data.totalPages);
   const paginationItems = getPaginationItems(data.page, totalPages);
 
@@ -290,35 +304,8 @@ export default function NoticeExplorer({ initialData, initialFilters }: NoticeEx
       </div>
 
       <div className="p-4 md:p-5">
+        {/* 검색을 첫 번째 행동 요소로 노출한다. */}
         <div className="min-w-0">
-          <AudienceNav
-            audienceGroups={data.facets.audienceGroups}
-            selectedAudience={filters.audienceGroup}
-            onSelect={handleAudienceSelect}
-          />
-        </div>
-
-        <div className="mt-4 min-w-0">
-          <div className="flex min-w-0 flex-col gap-3">
-            {showSourceGroupFilter ? (
-              <SourceGroupFilter
-                sourceGroups={data.facets.sourceGroups}
-                selectedSourceGroup={filters.sourceGroup}
-                onSelect={handleSourceGroupChange}
-              />
-            ) : null}
-
-            {showSourceFilter ? (
-              <SourceNav
-                sources={data.facets.sources}
-                selectedSource={filters.source}
-                onSelect={handleSourceSelect}
-              />
-            ) : null}
-          </div>
-        </div>
-
-        <div className="mt-4 min-w-0">
           <SearchBar
             value={searchInput}
             onChange={setSearchInput}
@@ -328,39 +315,71 @@ export default function NoticeExplorer({ initialData, initialFilters }: NoticeEx
           />
         </div>
 
-        <div className="mt-3 flex min-w-0 flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
+        <div className="mt-4 min-w-0">
+          <AudienceNav
+            audienceGroups={data.facets.audienceGroups}
+            selectedAudience={filters.audienceGroup}
+            onSelect={handleAudienceSelect}
+          />
+        </div>
+
+        {showSourceGroupFilter || showSourceFilter ? (
+          <div className="mt-3 min-w-0">
+            <div className="flex min-w-0 flex-col gap-3">
+              {showSourceGroupFilter ? (
+                <SourceGroupFilter
+                  sourceGroups={data.facets.sourceGroups}
+                  selectedSourceGroup={filters.sourceGroup}
+                  onSelect={handleSourceGroupChange}
+                />
+              ) : null}
+
+              {showSourceFilter ? (
+                <SourceNav
+                  sources={data.facets.sources}
+                  selectedSource={filters.source}
+                  onSelect={handleSourceSelect}
+                />
+              ) : null}
+            </div>
+          </div>
+        ) : null}
+
+        <div className="mt-4 flex min-w-0 flex-col gap-3 border-t border-slate-200 pt-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex min-w-0 flex-wrap items-center gap-2 text-xs text-slate-600">
+            <span className="font-semibold text-slate-500">적용된 필터</span>
+            <span className={appliedFilterChipClass(audienceActive)}>
+              대상 ·{" "}
+              {filters.audienceGroup === ALL_AUDIENCE_GROUPS
+                ? "전체"
+                : filters.audienceGroup}
+            </span>
+            {showSourceGroupFilter ? (
+              <span className={appliedFilterChipClass(sourceGroupActive)}>
+                중분류 ·{" "}
+                {filters.sourceGroup === ALL_SOURCE_GROUPS
+                  ? "전체"
+                  : filters.sourceGroup}
+              </span>
+            ) : null}
+            {showSourceFilter ? (
+              <span className={appliedFilterChipClass(sourceActive)}>
+                홈페이지 ·{" "}
+                {filters.source === ALL_SOURCES ? "전체" : filters.source}
+              </span>
+            ) : null}
+            <span className={appliedFilterChipClass(queryActive)}>
+              검색어 · {filters.q || "없음"}
+            </span>
+          </div>
           <button
             type="button"
             onClick={handleReset}
-            className="w-full rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 sm:w-auto"
+            disabled={!hasActiveFilters}
+            className="shrink-0 rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40 sm:w-auto"
           >
-            필터 초기화
+            초기화
           </button>
-        </div>
-
-        <div className="mt-3 flex min-w-0 flex-wrap gap-2 text-xs text-slate-600">
-          <span className="max-w-full rounded-full bg-slate-100 px-3 py-1 break-all">
-            대상:{" "}
-            {filters.audienceGroup === ALL_AUDIENCE_GROUPS
-              ? "전체"
-              : filters.audienceGroup}
-          </span>
-          {showSourceGroupFilter ? (
-            <span className="max-w-full rounded-full bg-slate-100 px-3 py-1 break-all">
-              중분류:{" "}
-              {filters.sourceGroup === ALL_SOURCE_GROUPS
-                ? "전체"
-                : filters.sourceGroup}
-            </span>
-          ) : null}
-          {showSourceFilter ? (
-            <span className="max-w-full rounded-full bg-slate-100 px-3 py-1 break-all">
-              홈페이지: {filters.source === ALL_SOURCES ? "전체" : filters.source}
-            </span>
-          ) : null}
-          <span className="max-w-full rounded-full bg-slate-100 px-3 py-1 break-all">
-            검색어: {filters.q || "없음"}
-          </span>
         </div>
 
         {error ? (

@@ -2,6 +2,8 @@
 
 import { ALL_SOURCE_GROUPS } from "@/lib/notices";
 
+import CollapsibleChipRow from "./CollapsibleChipRow";
+
 interface SourceGroupFilterProps {
   sourceGroups: string[];
   selectedSourceGroup: string;
@@ -22,33 +24,14 @@ export default function SourceGroupFilter({
   ];
 
   return (
-    <nav aria-label="중분류 필터" className="w-full min-w-0 rounded-lg border border-slate-200 bg-slate-50 p-2">
-      <div className="mb-2 px-1 text-xs font-semibold text-slate-500">중분류</div>
-      <div className="flex min-w-0 gap-2 overflow-x-auto pb-1 [scrollbar-width:thin] [-webkit-overflow-scrolling:touch]">
-        {items.map((item) => {
-          const active =
-            item.value === ALL_SOURCE_GROUPS
-              ? selectedSourceGroup === ALL_SOURCE_GROUPS
-              : selectedSourceGroup === item.value;
-
-          return (
-            <button
-              key={item.value}
-              type="button"
-              onClick={() => onSelect(item.value)}
-              className={`max-w-[70vw] shrink-0 whitespace-nowrap rounded-md px-4 py-2 text-sm font-medium transition sm:max-w-[260px] ${
-                active
-                  ? "bg-emerald-700 text-white shadow-sm"
-                  : "bg-white text-slate-700 ring-1 ring-inset ring-slate-200 hover:bg-slate-50"
-              }`}
-              aria-pressed={active}
-              title={item.label}
-            >
-              <span className="block truncate">{item.label}</span>
-            </button>
-          );
-        })}
-      </div>
-    </nav>
+    <CollapsibleChipRow
+      ariaLabel="중분류 필터"
+      label="중분류"
+      items={items}
+      selectedValue={selectedSourceGroup}
+      allValue={ALL_SOURCE_GROUPS}
+      onSelect={onSelect}
+      theme="emerald"
+    />
   );
 }

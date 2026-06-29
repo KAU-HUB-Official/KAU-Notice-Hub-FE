@@ -26,7 +26,7 @@ function AudienceTab({
     <button
       type="button"
       onClick={onClick}
-      className={`max-w-[80vw] shrink-0 whitespace-nowrap rounded-md px-4 py-2 text-sm font-medium transition sm:max-w-[320px] ${
+      className={`shrink-0 whitespace-nowrap rounded-md px-3.5 py-2 text-sm font-medium transition ${
         active
           ? "bg-slate-900 text-white shadow-sm"
           : "bg-white text-slate-700 ring-1 ring-inset ring-slate-200 hover:bg-slate-50"
@@ -34,7 +34,7 @@ function AudienceTab({
       aria-pressed={active}
       title={item.label}
     >
-      <span className="block truncate">{item.label}</span>
+      {item.label}
     </button>
   );
 }
@@ -54,7 +54,7 @@ export default function AudienceNav({
 
   return (
     <nav aria-label="대상자 필터" className="w-full min-w-0 rounded-lg border border-slate-200 bg-slate-50 p-2">
-      <div className="flex min-w-0 gap-2 overflow-x-auto pb-1 [scrollbar-width:thin] [-webkit-overflow-scrolling:touch]">
+      <div className="flex min-w-0 flex-wrap gap-2">
         {items.map((item) => (
           <AudienceTab
             key={item.value}

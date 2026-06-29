@@ -41,18 +41,20 @@ function TypingDots() {
 const INITIAL_MESSAGE: ChatMessage = {
   role: "assistant",
   content:
-    "저는 학교 공지 데이터를 바탕으로 이런 질문에 답할 수 있어요:\n\n" +
-    "• 수강신청 언제예요?\n" +
-    "• 성적 언제 나오나요?\n" +
-    "• 진행 중인 공모전이나 대회가 있나요?\n" +
-    "• 신청 가능한 장학금이 있나요?\n" +
-    "• 이번 학기 등록금 납부 기간은 언제예요?\n" +
-    "• 계절학기 신청 일정 알려주세요\n" +
-    "• 교내 채용·인턴 공고 있나요?\n" +
-    "• 기숙사 신청은 언제 시작해요?\n\n" +
-    "일정·제출 요건처럼 중요한 내용은 원문 공지 링크도 함께 확인하세요.",
+    "공지 내용을 바탕으로 질문에 답변해드려요.\n" +
+    "궁금한 내용을 직접 입력하거나 아래 예시를 선택해보세요.",
   status: "done",
 };
+
+// 빈 채팅 영역을 채우는 클릭형 예시 질문. 라벨이 곧 전송되는 질문이다.
+const SUGGESTED_QUESTIONS = [
+  "수강신청 언제예요?",
+  "성적 언제 나오나요?",
+  "신청 가능한 장학금이 있나요?",
+  "진행 중인 공모전이나 대회가 있나요?",
+  "교내 채용·인턴 공고 있나요?",
+  "기숙사 신청은 언제 시작해요?",
+];
 
 const STATUS_PLACEHOLDER: Record<NonNullable<ChatMessage["status"]>, string> = {
   searching: "관련 공지를 검색하고 있어요",
@@ -193,10 +195,8 @@ export default function ChatPanel() {
     }));
   }
 
-  async function onSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-
-    const question = input.trim();
+  async function sendQuestion(rawQuestion: string) {
+    const question = rawQuestion.trim();
     if (!question || loading) {
       return;
     }
@@ -334,6 +334,13 @@ export default function ChatPanel() {
     }
   }
 
+  function onSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    void sendQuestion(input);
+  }
+
+  const showSuggestions = messages.length === 1 && !loading;
+
   return (
     <section className="flex h-[560px] max-h-[calc(100vh-2rem)] w-full min-w-0 flex-col overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm md:h-[720px] xl:h-[calc(100vh-4rem)] xl:max-h-[780px]">
       <div className="border-b border-slate-200 px-4 py-4 md:px-5">
@@ -426,6 +433,24 @@ export default function ChatPanel() {
             </div>
           );
         })}
+
+        {showSuggestions ? (
+          <div className="space-y-2 pt-1">
+            {SUGGESTED_QUESTIONS.map((question) => (
+              <button
+                key={question}
+                type="button"
+                onClick={() => void sendQuestion(question)}
+                className="flex w-full min-w-0 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-left text-sm text-slate-700 shadow-sm transition hover:border-brand-300 hover:bg-brand-50 hover:text-brand-800"
+              >
+                <span aria-hidden className="shrink-0 text-brand-400">
+                  ›
+                </span>
+                <span className="min-w-0 break-words">{question}</span>
+              </button>
+            ))}
+          </div>
+        ) : null}
       </div>
 
       <form

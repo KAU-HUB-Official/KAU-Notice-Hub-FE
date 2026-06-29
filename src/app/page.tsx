@@ -141,7 +141,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
           </div>
         </header>
 
-        <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
+        <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,7fr)_minmax(0,3fr)]">
           <div id="notices" className="min-w-0 scroll-mt-8">
             <NoticeExplorer
               initialData={initialData}

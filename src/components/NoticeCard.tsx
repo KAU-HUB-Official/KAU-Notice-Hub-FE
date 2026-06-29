@@ -49,30 +49,38 @@ export default function NoticeCard({ notice, showCategory }: NoticeCardProps) {
       : sourceNames.map(formatSourceLabel).join(", ");
 
   return (
-    <article className="group w-full min-w-0 rounded-lg border border-slate-200 bg-white p-4 transition hover:border-brand-300 hover:shadow-sm md:p-5">
+    <article className="group w-full min-w-0 rounded-lg border border-slate-200 bg-white p-3.5 transition hover:border-brand-300 hover:shadow-sm md:p-4">
       <Link href={`/notices/${encodeURIComponent(notice.id)}`} className="block min-w-0">
-        <h3 className="line-clamp-2 break-words text-base font-semibold leading-snug text-slate-950 group-hover:text-brand-800 md:text-lg">
+        <h3 className="line-clamp-2 break-words text-base font-semibold leading-snug text-slate-950 group-hover:text-brand-800">
           {notice.title}
         </h3>
 
-        <div className="mt-3 flex min-w-0 flex-wrap gap-2 text-xs text-slate-600">
-          <span className="max-w-full rounded-md bg-slate-100 px-2 py-1 break-words">{formatDate(notice.date)}</span>
+        <div className="mt-2 flex min-w-0 flex-wrap items-center gap-1.5 text-[11px] text-slate-500">
+          <span className="break-words">{formatDate(notice.date)}</span>
           {notice.audienceGroup ? (
-            <span className="max-w-full rounded-md bg-slate-100 px-2 py-1 break-words">{notice.audienceGroup}</span>
+            <>
+              <span aria-hidden className="text-slate-300">·</span>
+              <span className="break-words">{notice.audienceGroup}</span>
+            </>
           ) : null}
           {notice.sourceGroup ? (
-            <span className="max-w-full rounded-md bg-emerald-50 px-2 py-1 text-emerald-700 break-words">{notice.sourceGroup}</span>
+            <>
+              <span aria-hidden className="text-slate-300">·</span>
+              <span className="break-words text-emerald-700">{notice.sourceGroup}</span>
+            </>
           ) : null}
-          <span className="max-w-full rounded-md bg-brand-50 px-2 py-1 text-brand-700 break-words">
-            {sourceLabel || "홈페이지 미상"}
-          </span>
+          <span aria-hidden className="text-slate-300">·</span>
+          <span className="break-words text-brand-700">{sourceLabel || "홈페이지 미상"}</span>
           {showCategory && notice.category ? (
-            <span className="max-w-full rounded-md bg-amber-50 px-2 py-1 text-amber-700 break-all">{notice.category}</span>
+            <>
+              <span aria-hidden className="text-slate-300">·</span>
+              <span className="break-all text-amber-700">{notice.category}</span>
+            </>
           ) : null}
         </div>
 
         {summary ? (
-          <p className="mt-3 line-clamp-2 break-words text-sm leading-6 text-slate-700">{summary}</p>
+          <p className="mt-1.5 line-clamp-2 break-words text-sm leading-6 text-slate-600">{summary}</p>
         ) : null}
       </Link>
     </article>
