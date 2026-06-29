@@ -15,7 +15,8 @@ interface ChatMessage {
   typing?: boolean;
 }
 
-const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
+const sleep = (ms: number) =>
+  new Promise<void>((resolve) => setTimeout(resolve, ms));
 
 function prefersReducedMotion() {
   return (
@@ -53,7 +54,7 @@ const SUGGESTED_QUESTIONS = [
   "신청 가능한 장학금이 있나요?",
   "진행 중인 공모전이나 대회가 있나요?",
   "교내 채용·인턴 공고 있나요?",
-  "기숙사 신청은 언제 시작해요?",
+  "기숙사 모집 언제 시작해요?",
 ];
 
 const STATUS_PLACEHOLDER: Record<NonNullable<ChatMessage["status"]>, string> = {
