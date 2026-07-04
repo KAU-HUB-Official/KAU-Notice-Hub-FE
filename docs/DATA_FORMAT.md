@@ -6,7 +6,7 @@
 
 ```text
 BackEnd /api/notices
-  -> MVP /api/notices route handler
+  -> FrontEnd /api/notices route handler
   -> 화면 렌더링
 ```
 
