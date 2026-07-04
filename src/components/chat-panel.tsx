@@ -43,7 +43,8 @@ const INITIAL_MESSAGE: ChatMessage = {
   role: "assistant",
   content:
     "공지 내용을 바탕으로 질문에 답변해드려요.\n" +
-    "궁금한 내용을 직접 입력하거나 아래 예시를 선택해보세요.",
+    "궁금한 내용을 직접 입력하거나 아래 예시를 선택해보세요.\n" +
+    "답변이 부정확할 수 있으니 중요한 정보는 근거 공지에서 꼭 확인해주세요.",
   status: "done",
 };
 
@@ -348,6 +349,9 @@ export default function ChatPanel() {
         <h2 className="text-xl font-semibold text-slate-950">AI 공지 챗봇</h2>
         <p className="mt-1 text-sm text-slate-600">
           요청은 익명으로 처리되며, 챗봇 개선을 위해 활용될 수 있습니다.
+        </p>
+        <p className="mt-0.5 text-xs text-slate-500">
+          AI 답변은 부정확할 수 있어요. 마감일 등 중요한 정보는 근거 공지 원문에서 꼭 확인하세요.
         </p>
       </div>
 
