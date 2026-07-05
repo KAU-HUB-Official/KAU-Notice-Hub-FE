@@ -351,7 +351,8 @@ export default function ChatPanel() {
           요청은 익명으로 처리되며, 챗봇 개선을 위해 활용될 수 있습니다.
         </p>
         <p className="mt-0.5 text-xs text-slate-500">
-          AI 답변은 부정확할 수 있어요. 마감일 등 중요한 정보는 근거 공지 원문에서 꼭 확인하세요.
+          AI 답변은 부정확할 수 있어요. 마감일 등 중요한 정보는 근거 공지
+          원문에서 꼭 확인하세요.
         </p>
       </div>
 
