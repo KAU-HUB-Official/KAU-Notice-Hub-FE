@@ -30,7 +30,8 @@ export async function POST(request: Request) {
       history: body.history,
       audienceGroup: body.audienceGroup,
       sourceGroup: body.sourceGroup,
-      source: body.source
+      source: body.source,
+      sessionId: body.sessionId
     });
 
     return NextResponse.json(answer);

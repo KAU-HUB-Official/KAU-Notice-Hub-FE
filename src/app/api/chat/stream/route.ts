@@ -33,7 +33,8 @@ export async function POST(request: Request) {
         sourceGroup: body.sourceGroup,
         source: body.source,
         category: body.category,
-        department: body.department
+        department: body.department,
+        sessionId: body.sessionId
       },
       request.signal
     );

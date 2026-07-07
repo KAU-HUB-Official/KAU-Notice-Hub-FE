@@ -25,10 +25,15 @@ interface ChatRequestBody {
   source?: string;
   category?: string;
   department?: string;
+  sessionId?: string;
 }
 ```
 
 `question`은 필수이며 route handler에서 빈 문자열과 500자 초과 입력을 거부한다.
+
+`sessionId`는 한 대화 흐름을 묶는 식별자다. `ChatPanel`이 마운트될 때(=새 대화) 브라우저에서
+한 번 생성해 이후 모든 턴이 같은 값을 보낸다. 백엔드 세션 로깅이 켜져 있을 때만 사용되며,
+없으면 해당 대화는 로깅되지 않는다.
 
 `history`는 직전 대화 turn을 담아 후속 질문 맥락을 유지한다. `ChatPanel`이 인사말과
 진행 중·에러 메시지를 제외한 완료된 user·assistant 턴을 최근 10개까지 보내고, 백엔드가

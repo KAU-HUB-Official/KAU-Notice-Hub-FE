@@ -85,6 +85,8 @@ export interface ChatRequestBody {
   source?: string;
   category?: string;
   department?: string;
+  // 한 대화 흐름을 묶는 식별자. 백엔드가 켜져 있을 때만 세션 로깅에 사용한다.
+  sessionId?: string;
 }
 
 export type ChatStreamEvent =

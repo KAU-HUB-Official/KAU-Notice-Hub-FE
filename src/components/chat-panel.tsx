@@ -128,6 +128,9 @@ export default function ChatPanel() {
   const [loading, setLoading] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([INITIAL_MESSAGE]);
   const scrollRef = useRef<HTMLDivElement>(null);
+  // 이 컴포넌트가 마운트된 동안(=한 대화)의 세션 식별자. 첫 질문 때 브라우저에서
+  // 한 번 생성해 이후 모든 턴이 공유한다. 새로고침/재마운트 시 새 세션으로 갈린다.
+  const sessionIdRef = useRef<string | null>(null);
 
   useEffect(() => {
     const container = scrollRef.current;
@@ -202,6 +205,10 @@ export default function ChatPanel() {
       return;
     }
 
+    if (!sessionIdRef.current) {
+      sessionIdRef.current = crypto.randomUUID();
+    }
+
     setInput("");
     setLoading(true);
     setMessages((prev) => [
@@ -241,6 +248,7 @@ export default function ChatPanel() {
           audienceGroup,
           sourceGroup,
           source,
+          sessionId: sessionIdRef.current,
         }),
       });
 
