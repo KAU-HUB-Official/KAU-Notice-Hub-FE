@@ -10,6 +10,7 @@ KAU Notice Hub 백엔드 API를 화면에서 탐색하고, 공지 기반 챗봇�
 - 검색어와 필터 상태의 URL 동기화
 - 공지 상세, 원문 링크, 첨부파일 표시, Markdown 본문 렌더링
 - 현재 필터 범위를 반영한 공지 챗봇 (SSE 스트리밍 응답)
+- 데스크톱은 사이드바 챗봇, 모바일은 우하단 버튼으로 여는 전체화면 챗봇 시트
 - SEO 메타데이터, Open Graph 이미지, `sitemap.xml`, `robots.txt`
 
 ## 기술 스택
@@ -116,7 +117,7 @@ POST /api/chat/stream   # SSE(text/event-stream) 스트리밍 응답, 챗봇 UI 
 src/app                 Next.js 페이지, API route handler, SEO(sitemap/robots/OG)
 src/components          공지 탐색, 목록, 상세 표시, Markdown 본문, 챗봇 UI
 src/lib/types.ts        프론트 타입
-src/lib/notices.ts      필터 sentinel, source 표시 유틸
+src/lib/notices.ts      필터 sentinel, source 표시 유틸, 링크 스킴 검증
 src/lib/site.ts         사이트 메타데이터, 메타 설명 생성 유틸
 src/server/notices      백엔드 API 클라이언트
 docs                    운영에 필요한 보조 문서

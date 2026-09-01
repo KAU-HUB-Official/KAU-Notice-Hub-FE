@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { FormEvent, useEffect, useRef, useState } from "react";
 
-import { shouldUseSourceFilter } from "@/lib/notices";
+import { safeHttpUrl, shouldUseSourceFilter } from "@/lib/notices";
 import { ChatStreamEvent, NoticeReference } from "@/lib/types";
 
 interface ChatMessage {
@@ -15,8 +15,26 @@ interface ChatMessage {
   typing?: boolean;
 }
 
+// embedded: 데스크톱 사이드바에 그대로 박히는 카드형. 자체 높이를 가진다.
+// sheet: 모바일 전체화면 시트 내부. 높이는 부모(ChatLauncher)가 정한다.
+export type ChatPanelVariant = "embedded" | "sheet";
+
+interface ChatPanelProps {
+  variant?: ChatPanelVariant;
+  onClose?: () => void;
+}
+
 const sleep = (ms: number) =>
   new Promise<void>((resolve) => setTimeout(resolve, ms));
+
+// 바닥에서 이 거리 이내면 "따라 내려가는 중"으로 보고 새 토큰마다 자동 스크롤한다.
+// 사용자가 위로 올려 읽는 중이면 스트리밍이 화면을 끌어내리지 않는다.
+const STICK_TO_BOTTOM_THRESHOLD_PX = 80;
+
+const PRIVACY_NOTICE =
+  "요청은 익명으로 처리되며, 챗봇 개선을 위해 활용될 수 있습니다.";
+const ACCURACY_NOTICE =
+  "AI 답변은 부정확할 수 있어요. 마감일 등 중요한 정보는 근거 공지 원문에서 꼭 확인하세요.";
 
 function prefersReducedMotion() {
   return (
@@ -122,22 +140,47 @@ async function* readSseEvents(
   }
 }
 
-export default function ChatPanel() {
+export default function ChatPanel({
+  variant = "embedded",
+  onClose,
+}: ChatPanelProps = {}) {
   const searchParams = useSearchParams();
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([INITIAL_MESSAGE]);
   const scrollRef = useRef<HTMLDivElement>(null);
+  // 사용자가 바닥에 붙어 있는지. 위로 올려 읽는 중이면 자동 스크롤을 멈춘다.
+  const stickToBottomRef = useRef(true);
   // 이 컴포넌트가 마운트된 동안(=한 대화)의 세션 식별자. 첫 질문 때 브라우저에서
   // 한 번 생성해 이후 모든 턴이 공유한다. 새로고침/재마운트 시 새 세션으로 갈린다.
   const sessionIdRef = useRef<string | null>(null);
 
+  const isSheet = variant === "sheet";
+
   useEffect(() => {
     const container = scrollRef.current;
-    if (container) {
+    if (container && stickToBottomRef.current) {
       container.scrollTop = container.scrollHeight;
     }
   }, [messages]);
+
+  function handleScroll() {
+    const container = scrollRef.current;
+    if (!container) {
+      return;
+    }
+    const distanceFromBottom =
+      container.scrollHeight - container.scrollTop - container.clientHeight;
+    stickToBottomRef.current = distanceFromBottom <= STICK_TO_BOTTOM_THRESHOLD_PX;
+  }
+
+  function scrollToBottom() {
+    const container = scrollRef.current;
+    if (container) {
+      stickToBottomRef.current = true;
+      container.scrollTop = container.scrollHeight;
+    }
+  }
 
   function updateLastAssistant(updater: (message: ChatMessage) => ChatMessage) {
     setMessages((prev) => {
@@ -211,6 +254,8 @@ export default function ChatPanel() {
 
     setInput("");
     setLoading(true);
+    // 질문을 보낸 순간은 항상 바닥으로 따라간다.
+    stickToBottomRef.current = true;
     setMessages((prev) => [
       ...prev,
       { role: "user", content: question },
@@ -349,23 +394,62 @@ export default function ChatPanel() {
   }
 
   const showSuggestions = messages.length === 1 && !loading;
+  const canSubmit = !loading && input.trim().length > 0;
+
+  const containerClassName = isSheet
+    ? "flex h-full min-h-0 w-full min-w-0 flex-col overflow-hidden bg-white"
+    : "flex h-[560px] max-h-[calc(100dvh-2rem)] w-full min-w-0 flex-col overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm md:h-[720px] xl:h-[calc(100dvh-4rem)] xl:max-h-[780px]";
 
   return (
-    <section className="flex h-[560px] max-h-[calc(100vh-2rem)] w-full min-w-0 flex-col overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm md:h-[720px] xl:h-[calc(100vh-4rem)] xl:max-h-[780px]">
-      <div className="border-b border-slate-200 px-4 py-4 md:px-5">
-        <h2 className="text-xl font-semibold text-slate-950">AI 공지 챗봇</h2>
-        <p className="mt-1 text-sm text-slate-600">
-          요청은 익명으로 처리되며, 챗봇 개선을 위해 활용될 수 있습니다.
-        </p>
-        <p className="mt-0.5 text-xs text-slate-500">
-          AI 답변은 부정확할 수 있어요. 마감일 등 중요한 정보는 근거 공지
-          원문에서 꼭 확인하세요.
-        </p>
+    <section className={containerClassName}>
+      <div
+        className={`shrink-0 border-b border-slate-200 ${isSheet ? "px-4 py-3" : "px-4 py-4 md:px-5"}`}
+      >
+        <div className="flex items-start justify-between gap-3">
+          <h2
+            className={`font-semibold text-slate-950 ${isSheet ? "text-lg" : "text-xl"}`}
+          >
+            AI 공지 챗봇
+          </h2>
+          {isSheet && onClose ? (
+            <button
+              type="button"
+              onClick={onClose}
+              aria-label="챗봇 닫기"
+              className="-mr-1 -mt-1 shrink-0 rounded-md p-2 text-slate-500 transition hover:bg-slate-100 hover:text-slate-900"
+            >
+              <svg
+                aria-hidden
+                viewBox="0 0 20 20"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.8"
+                strokeLinecap="round"
+                className="h-5 w-5"
+              >
+                <path d="M5 5l10 10M15 5L5 15" />
+              </svg>
+            </button>
+          ) : null}
+        </div>
+
+        {isSheet ? (
+          // 모바일 시트에서는 메시지 영역을 최대한 확보하려고 두 안내를 한 문단으로 합친다.
+          <p className="mt-1 text-xs leading-5 text-slate-500">
+            {PRIVACY_NOTICE} {ACCURACY_NOTICE}
+          </p>
+        ) : (
+          <>
+            <p className="mt-1 text-sm text-slate-600">{PRIVACY_NOTICE}</p>
+            <p className="mt-0.5 text-xs text-slate-500">{ACCURACY_NOTICE}</p>
+          </>
+        )}
       </div>
 
       <div
         ref={scrollRef}
-        className="min-w-0 flex-1 space-y-3 overflow-y-auto bg-slate-50 p-3 md:p-4"
+        onScroll={handleScroll}
+        className="min-h-0 min-w-0 flex-1 space-y-3 overflow-y-auto overscroll-contain bg-slate-50 p-3 md:p-4"
       >
         {messages.map((message, index) => {
           const placeholder =
@@ -417,28 +501,33 @@ export default function ChatPanel() {
                       근거 공지
                     </p>
                     <ul className="space-y-1">
-                      {message.references.map((reference) => (
-                        <li
-                          key={reference.id}
-                          className="break-words text-xs text-slate-600"
-                        >
-                          {reference.url ? (
-                            <Link
-                              href={reference.url}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="break-all hover:underline"
-                            >
-                              {reference.title}
-                            </Link>
-                          ) : (
-                            <span className="break-words">
-                              {reference.title}
-                            </span>
-                          )}
-                          {reference.date ? ` (${reference.date})` : ""}
-                        </li>
-                      ))}
+                      {message.references.map((reference) => {
+                        // 백엔드/LLM이 내려준 링크는 http(s)만 신뢰한다.
+                        const href = safeHttpUrl(reference.url);
+
+                        return (
+                          <li
+                            key={reference.id}
+                            className="break-words text-xs text-slate-600"
+                          >
+                            {href ? (
+                              <Link
+                                href={href}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="break-all hover:underline"
+                              >
+                                {reference.title}
+                              </Link>
+                            ) : (
+                              <span className="break-words">
+                                {reference.title}
+                              </span>
+                            )}
+                            {reference.date ? ` (${reference.date})` : ""}
+                          </li>
+                        );
+                      })}
                     </ul>
                   </div>
                 ) : null}
@@ -468,20 +557,39 @@ export default function ChatPanel() {
 
       <form
         onSubmit={onSubmit}
-        className="flex min-w-0 flex-col gap-2 border-t border-slate-200 bg-white p-3 sm:flex-row md:p-4"
+        className="flex min-w-0 shrink-0 items-center gap-2 border-t border-slate-200 bg-white p-3 md:p-4"
       >
         <input
           value={input}
           onChange={(event) => setInput(event.target.value)}
+          onFocus={scrollToBottom}
           placeholder="공지 관련 질문을 입력하세요"
-          className="h-11 w-full min-w-0 rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none ring-brand-300 placeholder:text-slate-400 focus:border-brand-500 focus:ring"
+          maxLength={500}
+          autoComplete="off"
+          enterKeyHint="send"
+          aria-label="공지 관련 질문"
+          // 모바일은 16px 미만이면 iOS Safari가 포커스 시 확대되므로 text-base를 쓴다.
+          className="h-11 w-full min-w-0 flex-1 rounded-lg border border-slate-300 px-3 py-2 text-base outline-none ring-brand-300 placeholder:text-slate-400 focus:border-brand-500 focus:ring sm:text-sm"
         />
         <button
           type="submit"
-          disabled={loading}
-          className="h-11 w-full shrink-0 rounded-lg bg-slate-900 px-5 text-sm font-medium text-white hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
+          disabled={!canSubmit}
+          aria-label={loading ? "답변 생성 중" : "질문 보내기"}
+          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-slate-900 text-sm font-medium text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto sm:px-5"
         >
-          {loading ? "생성 중" : "질문"}
+          <span className="hidden sm:inline">{loading ? "생성 중" : "질문"}</span>
+          <svg
+            aria-hidden
+            viewBox="0 0 20 20"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="h-5 w-5 sm:hidden"
+          >
+            <path d="M10 16V4M5 9l5-5 5 5" />
+          </svg>
         </button>
       </form>
     </section>

@@ -1,3 +1,4 @@
+import ChatLauncher from "@/components/chat-launcher";
 import ChatPanel from "@/components/chat-panel";
 import NoticeExplorer, {
   NoticeExplorerFilters,
@@ -148,11 +149,17 @@ export default async function HomePage({ searchParams }: HomePageProps) {
               initialFilters={initialFilters}
             />
           </div>
-          <div id="chat" className="min-w-0 scroll-mt-8 xl:sticky xl:top-8">
+          {/* xl 미만에서는 목록 아래 챗봇 대신 ChatLauncher의 전체화면 시트를 쓴다. */}
+          <div
+            id="chat"
+            className="hidden min-w-0 scroll-mt-8 xl:sticky xl:top-8 xl:block"
+          >
             <ChatPanel />
           </div>
         </div>
       </div>
+
+      <ChatLauncher />
     </main>
   );
 }

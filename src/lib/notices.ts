@@ -102,3 +102,35 @@ export function formatSourceLabel(source: string): string {
   const compact = normalized.replace(/^한국항공대학교\s*/, "");
   return compact || normalized;
 }
+
+// 브라우저는 href의 C0/C1 제어문자를 무시하고 URL을 해석한다.
+// ("java\tscript:alert(1)" -> javascript 스킴) 그래서 스킴을 보기 전에 먼저 제거한다.
+const URL_CONTROL_CHARS = /[\u0000-\u001f\u007f-\u009f]/g;
+const URL_SCHEME_PATTERN = /^([a-zA-Z][a-zA-Z0-9+.-]*):/;
+
+/**
+ * 링크로 렌더해도 되는 URL만 통과시킨다.
+ *
+ * 백엔드·크롤러·LLM이 내려준 값이 그대로 `<a href>`에 들어가므로 `javascript:`,
+ * `data:` 같은 스킴이 섞이면 클릭 시 스크립트가 실행될 수 있다.
+ * 스킴이 있으면 http(s)만 허용하고, 스킴이 없는 상대 경로는 그대로 통과시킨다.
+ * 허용되지 않으면 null을 돌려주고, 호출부에서 링크 대신 텍스트로 표시한다.
+ */
+export function safeHttpUrl(value: unknown): string | null {
+  if (typeof value !== "string") {
+    return null;
+  }
+
+  const cleaned = value.trim().replace(URL_CONTROL_CHARS, "");
+  if (!cleaned) {
+    return null;
+  }
+
+  const scheme = URL_SCHEME_PATTERN.exec(cleaned);
+  if (!scheme) {
+    return cleaned;
+  }
+
+  const protocol = scheme[1].toLowerCase();
+  return protocol === "http" || protocol === "https" ? cleaned : null;
+}

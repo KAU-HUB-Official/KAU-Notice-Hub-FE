@@ -20,7 +20,8 @@ export default function SiteFooter() {
 
   return (
     <footer id="contact" className="mt-6 border-t border-slate-800 bg-slate-950">
-      <div className="mx-auto flex w-full max-w-7xl flex-col gap-5 px-4 py-8 sm:px-6 lg:flex-row lg:items-center lg:justify-between lg:px-8">
+      {/* xl 미만에서는 우하단 챗봇 FAB이 떠 있어 링크를 가리지 않도록 아래 여백을 둔다. */}
+      <div className="mx-auto flex w-full max-w-7xl flex-col gap-5 px-4 pb-24 pt-8 sm:px-6 lg:flex-row lg:items-center lg:justify-between lg:px-8 xl:pb-8">
         <div className="min-w-0">
           <p className="text-sm font-semibold text-white">KAU Notice Hub</p>
           <p className="mt-1 max-w-2xl text-sm leading-6 text-slate-400">

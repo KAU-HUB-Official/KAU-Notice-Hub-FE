@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { MarkdownContent } from "@/components/MarkdownContent";
-import { formatSourceLabel, getNoticeSourceNames } from "@/lib/notices";
+import { formatSourceLabel, getNoticeSourceNames, safeHttpUrl } from "@/lib/notices";
 import { buildMetaDescription, siteConfig } from "@/lib/site";
 import { NoticeNavigation } from "@/lib/types";
 import { noticeService } from "@/server/notices";
@@ -83,6 +83,8 @@ export default async function NoticeDetailPage({ params }: NoticeDetailPageProps
   }
 
   const sourceNames = getNoticeSourceNames(notice);
+  // 크롤러가 넘긴 링크는 http(s)만 신뢰한다. 그 외 스킴은 링크 대신 텍스트로 표시된다.
+  const noticeUrl = safeHttpUrl(notice.url);
 
   const jsonLd = {
     "@context": "https://schema.org",
@@ -143,9 +145,9 @@ export default async function NoticeDetailPage({ params }: NoticeDetailPageProps
           </div>
         ) : null}
 
-        {notice.url ? (
+        {noticeUrl ? (
           <p className="mt-3 min-w-0 text-sm">
-            원문 링크: <Link href={notice.url} target="_blank" rel="noreferrer" className="break-all hover:underline">{notice.url}</Link>
+            원문 링크: <Link href={noticeUrl} target="_blank" rel="noreferrer" className="break-all hover:underline">{noticeUrl}</Link>
           </p>
         ) : null}
 
@@ -160,13 +162,21 @@ export default async function NoticeDetailPage({ params }: NoticeDetailPageProps
           <section className="mt-4 rounded-lg border border-slate-200 p-4">
             <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-600">첨부파일</h2>
             <ul className="mt-2 min-w-0 space-y-1 text-sm text-slate-700">
-              {notice.attachments.map((attachment, index) => (
-                <li key={`${attachment.url}-${index}`}>
-                  <Link href={attachment.url} target="_blank" rel="noreferrer" className="break-all hover:underline">
-                    {attachment.name}
-                  </Link>
-                </li>
-              ))}
+              {notice.attachments.map((attachment, index) => {
+                const attachmentUrl = safeHttpUrl(attachment.url);
+
+                return (
+                  <li key={`${attachment.url}-${index}`}>
+                    {attachmentUrl ? (
+                      <Link href={attachmentUrl} target="_blank" rel="noreferrer" className="break-all hover:underline">
+                        {attachment.name}
+                      </Link>
+                    ) : (
+                      <span className="break-all">{attachment.name}</span>
+                    )}
+                  </li>
+                );
+              })}
             </ul>
           </section>
         ) : null}

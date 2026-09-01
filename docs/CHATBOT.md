@@ -73,6 +73,45 @@ fallback 경로에서는, 전문을 글자 단위로 점진 노출하는 클라�
 애니메이션을 끄고 답변 전문을 즉시 표시한다. 애니메이션 keyframe은 `src/app/globals.css`에
 정의돼 있다.
 
+## 화면 배치(데스크톱 / 모바일)
+
+챗봇 UI(`ChatPanel`)는 두 가지 형태로 렌더된다.
+
+| 폭 | 형태 | 진입 |
+| --- | --- | --- |
+| `xl` 이상(1280px~) | 공지 목록 오른쪽 사이드바에 상주(`variant="embedded"`) | 항상 표시 |
+| `xl` 미만 | 화면 전체를 덮는 시트(`variant="sheet"`) | 우하단 고정 버튼(`ChatLauncher`) |
+
+모바일에서 공지 목록 아래에 챗봇을 세로로 쌓으면 목록 끝까지 스크롤해야 도달할 수 있고,
+남는 높이가 짧아 답변이 잘려 보였다. 그래서 `xl` 미만에서는 사이드바 챗봇을 숨기고
+`ChatLauncher`가 띄우는 전체화면 시트를 사용한다.
+
+`ChatLauncher` 동작:
+
+- 시트를 한 번 열면 닫아도 언마운트하지 않는다. 대화 내역과 `sessionId`가 유지된다.
+- 열려 있는 동안 `body` 스크롤을 잠그고, 닫으면 원래 값으로 되돌린다.
+- `Esc` 또는 헤더의 닫기 버튼으로 닫고, 닫을 때 열었던 버튼으로 포커스를 되돌린다.
+- `Tab` 포커스를 시트 안에 가둔다(`role="dialog"`, `aria-modal="true"`).
+- iOS는 키보드가 올라와도 `100dvh`가 줄지 않으므로, `visualViewport` 크기에 시트 높이를
+  맞춰 입력창이 키보드 뒤로 숨지 않게 한다.
+- 폭이 `xl` 이상으로 넓어지면 시트를 닫아 스크롤 잠금이 남지 않게 한다.
+
+`sheet`에서는 메시지 영역을 최대한 확보하려고 헤더의 익명 처리·정확도 안내를 한 문단으로
+합치고, 입력창과 전송 버튼을 한 행에 둔다(버튼은 아이콘). 모바일 입력창 폰트는 16px로
+둔다. 16px 미만이면 iOS Safari가 포커스 시 화면을 확대한다.
+
+## 메시지 스크롤
+
+메시지 영역은 바닥에 붙어 있을 때만 새 토큰을 따라 자동 스크롤한다. 사용자가 위로 올려
+읽는 중이면 스트리밍이 화면을 끌어내리지 않고, 다시 바닥 근처로 내리면 자동 스크롤이
+재개된다. 새 질문을 보내는 순간에는 항상 바닥으로 되돌린다.
+
+## 근거 공지 링크
+
+`NoticeReference.url`은 백엔드/LLM이 내려준 값이므로 그대로 `<a href>`에 넣지 않는다.
+`safeHttpUrl`(`src/lib/notices.ts`)로 스킴을 검사해 `http(s)`와 상대 경로만 링크로 렌더하고,
+`javascript:`·`data:` 같은 값은 링크 대신 제목 텍스트로 표시한다.
+
 ## 단발 응답(`/api/chat`)
 
 스트리밍을 쓰지 않는 `/api/chat`은 아래 shape를 반환한다.
@@ -91,6 +130,8 @@ interface ChatAnswer {
 | 역할 | 파일 |
 | --- | --- |
 | 챗봇 UI, SSE 파싱 | `src/components/chat-panel.tsx` |
+| 모바일 전체화면 시트 진입점 | `src/components/chat-launcher.tsx` |
+| 링크 스킴 검증(`safeHttpUrl`) | `src/lib/notices.ts` |
 | 스트리밍 route handler | `src/app/api/chat/stream/route.ts` |
 | 단발 route handler | `src/app/api/chat/route.ts` |
 | 백엔드 API 클라이언트 | `src/server/notices/backend-notice-service.ts` |
